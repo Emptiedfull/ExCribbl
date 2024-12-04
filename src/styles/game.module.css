@@ -1,0 +1,46 @@
+.game{
+    background-color: antiquewhite;
+    display: flex;
+    flex-direction: column;   
+    height: 100vh; 
+}
+
+
+.header {
+    height: 6%;
+    display: flex;
+    background-color: bisque;
+    align-items: center;
+    justify-content: space-between; /* Distribute space between items */
+    font-size: 1.3rem;
+    position: relative; /* Allow absolute positioning of the middle item */
+    padding-left: 1.8rem;
+}
+
+.timer {
+    justify-self: flex-start;
+}
+
+.word {
+    font-size: 1.3rem;
+    position: absolute; 
+    left: 50%; 
+    transform: translateX(-50%); 
+}
+
+.body {
+    display: flex;
+    flex:1
+    
+}
+
+.participants{
+    width: 20%;
+    background-color: burlywood;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+

@@ -1,0 +1,75 @@
+.Canvas{
+    display: flex;
+    flex:1;
+    background-color:blue;
+}
+
+.column{
+
+    display: flex;
+    flex: 2.2;
+    background-color: red;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.board{
+    width: 100%;
+    aspect-ratio: 6 / 4;
+    background-color: green;
+    cursor: none
+
+}
+
+.controls{
+    flex:1
+}
+
+.chat{
+    flex:1
+}
+
+
+.boardInner{
+    height: 100%;
+    width: 100%;
+}
+
+
+input[type="range"] {
+    margin-top: 2rem;
+    -webkit-appearance: none;
+    width: 50%;
+    height: 8px;
+    background: #ddd;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+    border-radius: 10px;
+}
+
+input[type="range"]:hover {
+    opacity: 1;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border-radius: 50%;
+    background: #4c72af;
+    cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: var(--thumb-size);
+    height: var(--thumb-size);
+    border-radius: 50%;
+    background: #4CAF50;
+    cursor: pointer;
+}
+
+.colorPicker{
+    margin-top: 1rem;
+}
