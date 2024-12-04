@@ -3,11 +3,13 @@ import styles from '../styles/game.module.css';
 import Canvas from '../components/Canvas';
 import { useEffect,useRef, useState } from 'react';
 
+import PlayerCard from '../components/playerCard';
 function Game() {
   const socket = useRef(null);
   const [socketState, setSocketState] = useState(false);
 
   const [gameStarted, setGameStarted] = useState(false);
+  const [participants, setParticipants] = useState([{name: "player1", score: 0},{name: "player2", score: 0},{name: "player3", score: 0}]);
   
   
   useEffect(() => {
@@ -32,7 +34,7 @@ function Game() {
             if (data.type === "game_start"){
                 setGameStarted(true)
                 const participants = data.players;
-                console.log(participants)
+                setParticipants(participants)
             }
 
             if (data.type === "your_turn"){
@@ -57,6 +59,9 @@ function Game() {
         </div>
         <div className={styles.body}>
             <div className={styles.participants}>
+                {participants.map((participant, index) => {
+                    return <PlayerCard key={index} name={participant.name} score={participant.score}/>
+                })}
 
             </div>
             {socketState && <Canvas ws={socket}/>}
