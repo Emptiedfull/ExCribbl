@@ -28,6 +28,7 @@ class Game:
         self.current_round:int = 0
         self.current_player:Player = None
         self.stop_event = asyncio.Event()
+        self.wordchoices = []
         self.currentword = ""
         self.wordlist = ["apple","banana","cherry","dog","cat","elephant","giraffe","horse","iguana","jaguar","kangaroo","lion","monkey","newt","octopus","penguin","quail","rabbit","snake","tiger","umbrella","vulture","whale","xray","yak","zebra"]
         
@@ -96,9 +97,10 @@ class Game:
         }
         messagejson = json.dumps(message)
 
+        self.wordchoices = self.gen_word_choices()
         personalmessage = {
             "type":"your_turn",
-            "words":self.gen_word_choices()
+            "words":self.wordchoices
 
         }
         await self.current_player.socket.send_text(json.dumps(personalmessage))
@@ -134,10 +136,24 @@ class Lobby:
         await socket.accept()
         player = Player(name=name,score=0,socket=socket)
         self.clients.append(player)
-        if len(self.clients) == 1:
+        if len(self.clients) == 1 and not self.host:
+           
             self.host = self.clients[0]
+            await self.host.socket.send_text(json.dumps({"type":"host"}))
 
-        if self.game:
+        message1 = {
+            "type":"participants",
+            "players":[{"name":player.name,"Score":player.score} for player in self.clients]
+        }
+
+        await self.broadcast(json.dumps(message1))
+
+        if self.game:    
+            await player.socket.send_text(json.dumps({"type":"game_start","players":[{"name":player.name,"Score":player.score} for player in self.clients]}))
+            await player.socket.send_text(json.dumps({"type":"round","round":self.game.current_round}))
+            await player.socket.send_text(json.dumps({"type":"turn","player":self.game.current_player.name}))
+
+
             message = {
                 "type":"draw",
                 "instructions":self.game.instructions
@@ -146,12 +162,20 @@ class Lobby:
         return player
 
     async def disconnect(self,socket):
+
+
         for player in self.clients:
             if player.socket == socket:
                 self.clients.remove(player)
-                if self.host == player:
+               
+
+                if self.host == player and len(self.clients) > 0:
                     self.host = self.clients[0]
+                    self.host.socket.send_text(json.dumps({"type":"host"}))
                 break
+        if len(self.clients) == 0:
+            self.host = None
+            self.game = None
 
     async def broadcast(self,message):
         for client in self.clients:
@@ -161,9 +185,6 @@ class Lobby:
         
         if self.host == player and not self.game:
             self.game = Game(players=self.clients,rounds=settings["rounds"])
-
-
-         
             await self.game.start_game()
             
 
@@ -196,6 +217,7 @@ async def EventHandlder(message:str,player:Player):
         return
 
     if data["type"] == "start_game":
+        print("Starting game")
         await lobby.start_game(data["settings"],player)
 
     if data["type"] == "draw":
