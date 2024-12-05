@@ -1,8 +1,8 @@
 import styles from '../styles/playercard.module.css';
 
-export default function PlayerCard({name,score}) {
+export default function PlayerCard({name,score,active}) {
     return (
-        <div className={styles.playerCard}>
+        <div className={(styles.playerCard) + " " +  (active ? styles.active: "none")} >
             <div className={styles.playerName}>
                 {name}
             </div>

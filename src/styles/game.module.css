@@ -11,9 +11,9 @@
     display: flex;
     background-color: bisque;
     align-items: center;
-    justify-content: space-between; /* Distribute space between items */
+    justify-content: space-between; 
     font-size: 1.3rem;
-    position: relative; /* Allow absolute positioning of the middle item */
+    position: relative; 
     padding-left: 1.8rem;
 }
 
@@ -44,5 +44,28 @@
     gap: 1rem;
     
 }
+.overlay{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    color: white;
+    font-size: 2rem;
+    
+}
+
+.wordchoice{
+    border-radius: 4px;
+    padding:0.5rem;
+    background-color: #4c72af;
+}
+
+
 
 

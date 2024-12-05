@@ -17,8 +17,7 @@
     width: 100%;
     aspect-ratio: 6 / 4;
     background-color: green;
-    cursor: none
-
+    
 }
 
 .controls{
@@ -72,4 +71,11 @@ input[type="range"]::-moz-range-thumb {
 
 .colorPicker{
     margin-top: 1rem;
+}
+
+.wordchoices{
+    display: fixed;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
 }

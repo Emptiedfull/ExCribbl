@@ -7,7 +7,7 @@ import {CirclePicker,SketchPicker }from 'react-color'
 
 
 
-function Canvas({ws}) {
+function Canvas({ws,activted}) {
     const canvasRef = useRef(null);
 
    
@@ -62,6 +62,7 @@ function Canvas({ws}) {
     }, []);
 
     useEffect(() => {
+        if (!activted) return;
         const canvas = canvasRef.current;
 
         const getCursorPosition = (event) => {
@@ -114,7 +115,7 @@ function Canvas({ws}) {
             canvas.removeEventListener('mousemove', handleMouseMove);
             canvas.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging])
+    }, [isDragging,activted])
 
     const handleSliderChange = (event) => {
         setControls({
@@ -137,11 +138,13 @@ function Canvas({ws}) {
                     <canvas
                         ref={canvasRef}
                         className={styles.boardInner}
-
+                        style={{
+                            cursor: {activted} ? 'default' : 'none'
+                        }}
 
                     ></canvas>
                 </div>
-                {isHovering && <div
+                {isHovering && activted && <div
                     className={styles.customCursor}
                     style={{
                         width: `${controls.brushSize * 2}px`,
