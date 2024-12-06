@@ -16,6 +16,7 @@ function Game() {
     const [wordchoices, setWordChoices] = useState([]);
     const [currentWord, setCurrentWord] = useState("");
     const [activePlayer, setActivePlayer] = useState("");
+    const [Wordtimer,setWordTimer] = useState(null);
 
 
     useEffect(() => {
@@ -27,9 +28,15 @@ function Game() {
             socket.current = ws;
         }
 
-        ws.onmessage = (message) => {
+        const handleMessage =  (message) => {
             const data = JSON.parse(message.data);
-            console.log(data)
+
+
+            if (data.type === "your_turn") {
+              
+                setWordChoices(data.words)
+                setWordTimer(30)
+            }
             if (data.type === "game_start") {
                 setGameStarted(true)
             }
@@ -39,22 +46,31 @@ function Game() {
             }
 
             if (data.type === "participants") {
-                console.log(data.players)
+              
                 setParticipants(data.players)
             }
 
-            if (data.type === "your_turn") {
-                setWordChoices(data.words)
-            }
 
             if (data.type === "turn"){
                 setActivePlayer(data.player)
             }
-        }
+
+            if (data.type === "word_selected"){
+                
+                setCurrentWord(data.word)
+                setActivated(true)
+                setWordChoices([])
+            }
+
+
+        }   
+
+        ws.addEventListener('message', handleMessage);
 
 
 
         return () => {
+            ws.removeEventListener('message', handleMessage);
             ws.close();
 
         }
@@ -63,10 +79,18 @@ function Game() {
 
     const handleWordChoice = (word) => {
         socket.current.send(JSON.stringify({ type: "word_choice", word: word }))
-        setWordChoices([])
-        setActivated(true)
-        setCurrentWord(word)
+        
+       
     }
+
+    useEffect(() => {
+        if (Wordtimer > 0) {
+            const countdown = setInterval(() => {
+                setWordTimer((prevTimer) => prevTimer - 1);
+            }, 1000);
+            return () => clearInterval(countdown);
+        } 
+    }, [Wordtimer]);
 
     return (
 
@@ -88,9 +112,11 @@ function Game() {
 
             </div>
             {wordchoices.length > 0 && 
-                <div className={styles.overlay}>
-                   
-                        
+                <div className={styles.overlay}>  
+                        <h2 className={styles.overlayHeading}> Your Turn</h2>   
+                        <h3 className={styles.overlaySubheading}>Choose a word</h3>
+                        <h3 className={styles.TimeRemaining}>Time Remaining: {Wordtimer}</h3>
+                        <div className={styles.choices}>
                         {
                             wordchoices.map((word, index) => {
                                 return <div key={index} className={styles.wordchoice} onClick={(e)=>{
@@ -99,6 +125,8 @@ function Game() {
                             })
                         }
                  
+                            </div>
+                      
 
                 </div>}
 

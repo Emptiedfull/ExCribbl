@@ -10,6 +10,8 @@ import {CirclePicker,SketchPicker }from 'react-color'
 function Canvas({ws,activted}) {
     const canvasRef = useRef(null);
 
+    const [messages,setmessages] = useState([]);
+
    
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -31,31 +33,27 @@ function Canvas({ws,activted}) {
     }, [])
 
     useEffect(() => {
-            console.log(ws)
             const socket = ws.current;
+            console.log(socket)
 
-
-            socket.onmessage = (event) => {
+            const handleSocket = (event) => {
                 let parsed = JSON.parse(event.data);
-              
+                console.log(parsed)
                 if (parsed.type === "draw") {
                     console.log(parsed.instructions)
                     InstructionAdder(parsed.instructions, canvasRef);
 
                 }
+            }
+            socket.addEventListener('message', handleSocket);
 
-                if (parsed.type === "game_start"){
-                    console.log(parsed)
-                }
 
-                if (parsed.type === "your_turn"){
-                    console.log(parsed)
-                }
             
             
-        }
+        
 
         return () => {
+
             socket.close();
         }
 
@@ -181,6 +179,15 @@ function Canvas({ws,activted}) {
                 </div>
             </div>
             <div className={styles.chat}>
+                <div className={styles.chatMessages}>
+
+
+                </div>
+                <div classN ame={styles.chatInput}>
+                    <input type="text" placeholder="guess the word" className={styles.chatTextInput}/>
+                    <button className={styles.chatSendButton}>Send</button>
+
+                </div>
 
             </div>
 
