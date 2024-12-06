@@ -23,6 +23,8 @@ class Player(BaseModel):
 class Game:
     def __init__(self,players:list[Player],rounds):
         self.instructions = []
+        self.chats = []
+        self.privchats = []
         self.players:list[Player] = players
         self.rounds:int = rounds
         self.current_round:int = 0
@@ -31,6 +33,7 @@ class Game:
         self.wordchoices = []
         self.currentword = ""
         self.wordlist = ["apple","banana","cherry","dog","cat","elephant","giraffe","horse","iguana","jaguar","kangaroo","lion","monkey","newt","octopus","penguin","quail","rabbit","snake","tiger","umbrella","vulture","whale","xray","yak","zebra"]
+        self.autoSelect = None
         
       
     async def broadcast(self,message):
@@ -79,7 +82,29 @@ class Game:
         for i in range(3):
             words.append(random.choice(self.wordlist))
         return words
+    
+    async def auto_select_word(self):
+        await asyncio.sleep(30)
+        if self.autoSelect != False:
+            self.currentword = random.choice(self.wordchoices)
+            message = {
+                "type":"word_selected",
+                "word":self.currentword
+            }
+            await self.current_player.socket.send_text(json.dumps(message))
 
+    async def select_word(self,word,player):
+        if player != self.current_player:
+            return
+        if word not in self.wordchoices:
+            return
+        self.autoSelect = False
+        self.currentword = word
+        message = {
+            "type":"word_selected",
+            "word":word
+        }
+        await self.current_player.socket.send_text(json.dumps(message))
         
     async def start_turn(self):
         if self.current_player == None:
@@ -103,8 +128,15 @@ class Game:
             "words":self.wordchoices
 
         }
+        
+       
+
         await self.current_player.socket.send_text(json.dumps(personalmessage))
         await self.broadcast(messagejson)
+
+        self.autoSelect = True
+        await self.auto_select_word()
+
 
     async def draw(self,instructionsList,player):
 
@@ -153,7 +185,7 @@ class Lobby:
             await player.socket.send_text(json.dumps({"type":"round","round":self.game.current_round}))
             await player.socket.send_text(json.dumps({"type":"turn","player":self.game.current_player.name}))
 
-
+          
             message = {
                 "type":"draw",
                 "instructions":self.game.instructions
@@ -171,7 +203,7 @@ class Lobby:
 
                 if self.host == player and len(self.clients) > 0:
                     self.host = self.clients[0]
-                    self.host.socket.send_text(json.dumps({"type":"host"}))
+                    await self.host.socket.send_text(json.dumps({"type":"host"}))
                 break
         if len(self.clients) == 0:
             self.host = None
@@ -193,11 +225,11 @@ lobby = Lobby()
     
 
 
-@app.websocket("/ws/{name}")
-async def websocket_endpoint(websocket: WebSocket,name:str):
+@app.websocket("/ws/name")
+async def websocket_endpoint(websocket: WebSocket,):
 
     try:
-        player = await lobby.connect(websocket,name)
+        player = await lobby.connect(websocket,random.choice(["red","blue","green","yellow","purple","orange","pink","brown","black","white"]))
         while True:
 
             data = await websocket.receive_text()
@@ -225,5 +257,8 @@ async def EventHandlder(message:str,player:Player):
 
     if data["type"] == "test":
         await lobby.game.test()
+
+    if data["type"] == "word_selected":
+        await lobby.game.select_word(data["word"],player)
     
 
