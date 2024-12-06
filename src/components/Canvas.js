@@ -5,12 +5,15 @@ import axios from 'axios';
 import { UpdateCanvas, createCanvas, DrawCanvas, InstructionAdder } from './CanvasHandler';
 import {CirclePicker,SketchPicker }from 'react-color'
 
+import Message from './message';
+
 
 
 function Canvas({ws,activted}) {
     const canvasRef = useRef(null);
 
-    const [messages,setmessages] = useState([]);
+    const [messages,setmessages] = useState([{author:"server",message:"welcome to the game"},{author:"server",message:"you have 60 seconds to draw"}]);
+    const [guess,setguess] = useState("");
 
    
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -42,6 +45,15 @@ function Canvas({ws,activted}) {
                 if (parsed.type === "draw") {
                     console.log(parsed.instructions)
                     InstructionAdder(parsed.instructions, canvasRef);
+
+                }
+
+                if (parsed.type === "message") {
+                    setmessages(messages => [...messages, { author: parsed.author, message: parsed.message }]);
+                }
+
+                if (parsed.type === "correct_guess"){
+                    setmessages(messages => [...messages, { author: "server", message: `${parsed.player} has guessed the word` }]);
 
                 }
             }
@@ -125,6 +137,16 @@ function Canvas({ws,activted}) {
 
     };
 
+    const handleGuess = () => {
+        console.log("guessing")
+        const message = {
+            type: "guess",
+            guess: guess
+        }
+        ws.current.send(JSON.stringify(message))
+        setguess("");
+    }
+
 
 
 
@@ -180,12 +202,17 @@ function Canvas({ws,activted}) {
             </div>
             <div className={styles.chat}>
                 <div className={styles.chatMessages}>
+                    {
+                        messages.map((message, index) => {
+                            return <Message key={index} author={message.author} message={message.message} />
+                        })
+                    }
 
 
                 </div>
                 <div classN ame={styles.chatInput}>
-                    <input type="text" placeholder="guess the word" className={styles.chatTextInput}/>
-                    <button className={styles.chatSendButton}>Send</button>
+                    <input type="text" placeholder="guess the word" className={styles.chatTextInput} value={guess} onChange={(e)=>{setguess(e.target.value)}}/>
+                    <button className={styles.chatSendButton}  onClick={()=>handleGuess()}>Send</button>
 
                 </div>
 

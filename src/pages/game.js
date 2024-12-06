@@ -78,6 +78,7 @@ function Game() {
     }, []);
 
     const handleWordChoice = (word) => {
+        console.log(word)
         socket.current.send(JSON.stringify({ type: "word_choice", word: word }))
         
        
