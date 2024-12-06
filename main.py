@@ -23,9 +23,8 @@ class Player(BaseModel):
 class Game:
     def __init__(self,players:list[Player],rounds):
         self.instructions = []
-        self.chats = []
-        self.privchats = []
         self.players:list[Player] = players
+        self.passed:list[Player] = []
         self.rounds:int = rounds
         self.current_round:int = 0
         self.current_player:Player = None
@@ -34,6 +33,76 @@ class Game:
         self.currentword = ""
         self.wordlist = ["apple","banana","cherry","dog","cat","elephant","giraffe","horse","iguana","jaguar","kangaroo","lion","monkey","newt","octopus","penguin","quail","rabbit","snake","tiger","umbrella","vulture","whale","xray","yak","zebra"]
         self.autoSelect = None
+        self.revealed = ""
+
+    
+    async def guess(self,guess:str,player:Player):
+        print("Guessing")
+        if player == self.current_player:
+            return
+        if guess == self.currentword:
+            print("Correct guess")
+            player.score = 100 - len(self.passed)*10
+            message = {
+                "type":"correct_guess",
+                "player":player.name,
+                
+            }
+            self.passed.append(player)
+
+            await self.broadcast(json.dumps(message))
+            await self.broadcast(json.dumps({"type":"participants","players":[{"name":player.name,"Score":player.score} for player in self.players]}))
+        else:
+            print("Incorrect guess")
+            message = {
+                "type":"message",
+                "author":player.name,
+                "message":guess
+            }
+            
+            await self.broadcast(json.dumps(message))
+
+    async def reveal_letters(self):
+        time_start = time.time()
+        message = {
+            "type":"current_word",
+            "word":"_"*len(self.currentword)
+        }
+        
+        await self.broadcast(json.dumps(message))
+        await asyncio.sleep(10)
+        while True:
+            if time.time() - time_start > 60:
+                break
+            if len(self.revealed) != len(self.currentword)-2:
+                letter = random.choice(self.currentword)
+            
+                if letter not in self.revealed:
+                    self.revealed += letter
+                    word = list("_"*len(self.currentword))
+                    for revealed in self.revealed:
+                    
+                        index = self.currentword.index(revealed)
+                        word[index] = revealed
+                    word = "".join(word)
+
+                    message = {
+                        "type":"current_word",
+                        "word":word
+                    }
+                
+                    await self.broadcast(json.dumps(message))
+                    await asyncio.sleep(10)
+        print("turn ended")
+        message = {
+            "type":"turn_ended",
+            "word":self.currentword,
+            "players":[{"name":player.name,"Score":player.score} for player in self.players]
+        }
+
+        
+
+        
         
       
     async def broadcast(self,message):
@@ -105,6 +174,7 @@ class Game:
             "word":word
         }
         await self.current_player.socket.send_text(json.dumps(message))
+        asyncio.create_task(self.reveal_letters())
         
     async def start_turn(self):
         if self.current_player == None:
@@ -135,7 +205,7 @@ class Game:
         await self.broadcast(messagejson)
 
         self.autoSelect = True
-        await self.auto_select_word()
+        asyncio.create_task(self.auto_select_word())
 
 
     async def draw(self,instructionsList,player):
@@ -241,6 +311,7 @@ async def websocket_endpoint(websocket: WebSocket,):
 async def EventHandlder(message:str,player:Player):
     try:
         data = json.loads(message)
+
         
     except:
         print("Invalid message format")
@@ -258,7 +329,12 @@ async def EventHandlder(message:str,player:Player):
     if data["type"] == "test":
         await lobby.game.test()
 
-    if data["type"] == "word_selected":
+    if data["type"] == "word_choice":
+        print("word choice")
         await lobby.game.select_word(data["word"],player)
+
+    if data["type"] == "guess":
+        print("Guessing")
+        await lobby.game.guess(data["guess"],player)
     
 
