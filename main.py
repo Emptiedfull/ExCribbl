@@ -31,7 +31,7 @@ class Game:
         self.players_left:list[Player] = players
         self.passed:list[Player] = []
         self.settings = settings
-        self.roundScore:dict[Player:int] = {}
+        self.roundScore:list[dict[Player,int]] = []
         self.current_round:int = 0
         self.current_player:Player = None
         self.stop_event = asyncio.Event()
@@ -49,7 +49,8 @@ class Game:
             return
         if guess == self.currentword:
             print("Correct guess")
-            self.roundScore[player] = 100 - len(self.revealed)*5 - len(self.passed)*8
+            self.roundScore.append({"player":player,"score":100 - len(self.passed)*10 - len(self.revealed)*5})
+            self.players[self.players.index(player)].score += 100 - len(self.passed)*10 - len(self.revealed)*5
             message = {
                 "type":"correct_guess",
                 "player":player.name,
@@ -58,9 +59,6 @@ class Game:
             self.passed.append(player)
 
             await self.broadcast(json.dumps(message))
-            await self.broadcast(json.dumps({"type":"participants","players":[{"name":player.name,"Score":player.score} for player in self.players]}))
-
-
             if len(self.passed) == len(self.players) - 1:
                 self.early_stop = True
                 await self.turn_cleanup()
@@ -91,7 +89,7 @@ class Game:
         time_start = time.time()
         while not self.early_stop:
             await asyncio.sleep(10)
-            if time.time() - time_start > self.settings["round_time"]:
+            if time.time() - time_start > self.settings["round_time"] or self.early_stop:
                 break
             if len(self.revealed) != len(self.currentword)-2:
                 letter = random.choice(self.currentword)
@@ -122,15 +120,33 @@ class Game:
         
 
     async def turn_cleanup(self):
-        print("turn ended")
+
+      
+        
+        print(self.players)
+       
+        self.roundScore = [{"player":player["player"].name,"score":player["score"],"current":False} for player in self.roundScore]
+        self.roundScore.append({"player":self.current_player.name,"score":0 + len(self.passed)*20 - len(self.revealed)*5,"current":True})
+        self.players[self.players.index(self.current_player)].score += 0 + len(self.passed)*20 - len(self.revealed)*5
+
+      
+
+
         message = {
             "type":"turn_ended",
             "word":self.currentword,
+            "roundScore":self.roundScore
+        }
+        print(message)
+        await self.broadcast(json.dumps(message))
+
+        message2 = {
+            "type":"participants",
             "players":[{"name":player.name,"Score":player.score} for player in self.players]
         }
-
-        await self.broadcast(json.dumps(message))
+        await self.broadcast(json.dumps(message2))
         await asyncio.sleep(10)
+        self.roundScore = []
         self.revealed = ""
         self.autoSelect = False
         self.currentword = ""
@@ -341,7 +357,6 @@ async def websocket_endpoint(websocket: WebSocket,):
             
 
             data = await websocket.receive_text()
-            print(data)
             await EventHandlder(data,player)
     except WebSocketDisconnect:
         await lobby.disconnect(websocket)
