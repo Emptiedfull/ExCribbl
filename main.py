@@ -19,30 +19,37 @@ class Player(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+class Settings(BaseModel):
+    rounds:int
+    round_time:int
   
 class Game:
-    def __init__(self,players:list[Player],rounds):
+    def __init__(self,players:list[Player],settings:Settings):
         self.instructions = []
         self.players:list[Player] = players
+        self.players_left:list[Player] = players
         self.passed:list[Player] = []
-        self.rounds:int = rounds
+        self.settings = settings
+        self.roundScore:dict[Player:int] = {}
         self.current_round:int = 0
         self.current_player:Player = None
         self.stop_event = asyncio.Event()
+        self.early_stop:bool = False
+        self.autoSelect = None
         self.wordchoices = []
         self.currentword = ""
         self.wordlist = ["apple","banana","cherry","dog","cat","elephant","giraffe","horse","iguana","jaguar","kangaroo","lion","monkey","newt","octopus","penguin","quail","rabbit","snake","tiger","umbrella","vulture","whale","xray","yak","zebra"]
-        self.autoSelect = None
+       
         self.revealed = ""
 
     
     async def guess(self,guess:str,player:Player):
-        print("Guessing")
         if player == self.current_player:
             return
         if guess == self.currentword:
             print("Correct guess")
-            player.score = 100 - len(self.passed)*10
+            self.roundScore[player] = 100 - len(self.revealed)*5 - len(self.passed)*8
             message = {
                 "type":"correct_guess",
                 "player":player.name,
@@ -52,6 +59,11 @@ class Game:
 
             await self.broadcast(json.dumps(message))
             await self.broadcast(json.dumps({"type":"participants","players":[{"name":player.name,"Score":player.score} for player in self.players]}))
+
+
+            if len(self.passed) == len(self.players) - 1:
+                self.early_stop = True
+                await self.turn_cleanup()
         else:
             print("Incorrect guess")
             message = {
@@ -63,16 +75,23 @@ class Game:
             await self.broadcast(json.dumps(message))
 
     async def reveal_letters(self):
-        time_start = time.time()
+        print( "Revealing letters")
         message = {
             "type":"current_word",
             "word":"_"*len(self.currentword)
         }
+
+        message2 = {
+            "type":"turn_timer_start",
+            "timer":self.settings["round_time"]
+        }
         
-        await self.broadcast(json.dumps(message))
-        await asyncio.sleep(10)
-        while True:
-            if time.time() - time_start > 60:
+        await self.ex_broadcast(json.dumps(message),self.current_player)
+        await self.broadcast(json.dumps(message2))
+        time_start = time.time()
+        while not self.early_stop:
+            await asyncio.sleep(10)
+            if time.time() - time_start > self.settings["round_time"]:
                 break
             if len(self.revealed) != len(self.currentword)-2:
                 letter = random.choice(self.currentword)
@@ -91,8 +110,18 @@ class Game:
                         "word":word
                     }
                 
-                    await self.broadcast(json.dumps(message))
-                    await asyncio.sleep(10)
+                    await self.ex_broadcast(json.dumps(message),self.current_player)
+                    
+       
+
+        if  not self.early_stop:
+            await self.turn_cleanup()
+
+       
+
+        
+
+    async def turn_cleanup(self):
         print("turn ended")
         message = {
             "type":"turn_ended",
@@ -100,10 +129,17 @@ class Game:
             "players":[{"name":player.name,"Score":player.score} for player in self.players]
         }
 
+        await self.broadcast(json.dumps(message))
+        await asyncio.sleep(10)
+        self.revealed = ""
+        self.autoSelect = False
+        self.currentword = ""
+        self.instructions = []
+        self.wordchoices = []
+        self.passed = []
+        await self.start_turn()
         
 
-        
-        
       
     async def broadcast(self,message):
         for player in self.players:
@@ -134,8 +170,16 @@ class Game:
 
 
     async def start_round(self):
+        self.players_left = self.players.copy()
         self.instructions = []
         self.current_round += 1
+        if self.current_round > self.settings["rounds"]:
+            message = {
+                "type":"game_end",
+                "players":[{"name":player.name,"Score":player.score} for player in self.players]
+            }
+            await self.broadcast(json.dumps(message))
+            return
         message = {
             "type":"round",
             "round":self.current_round
@@ -177,14 +221,11 @@ class Game:
         asyncio.create_task(self.reveal_letters())
         
     async def start_turn(self):
-        if self.current_player == None:
-            self.current_player = self.players[0]
-        else:
-            index = self.players.index(self.current_player)
-            if index == len(self.players)-1:
-                self.current_player = self.players[0]
-            else:
-                self.current_player = self.players[index+1]
+        if len(self.players_left) == 0:
+            await self.start_round()
+            return
+        self.current_player = self.players_left.pop()
+        
             
         message = {
             "type":"turn",
@@ -220,10 +261,6 @@ class Game:
         else:
             self.instructions.append(instructionsList)
         await self.ex_broadcast(json.dumps(message),player)
-
-   
-
-        await self.broadcast(json.dumps(instructionsList))
 
 
 
@@ -283,10 +320,10 @@ class Lobby:
         for client in self.clients:
             await client.socket.send_text(message)
 
-    async def start_game(self,settings,player):
+    async def start_game(self,settings:Settings,player):
         
         if self.host == player and not self.game:
-            self.game = Game(players=self.clients,rounds=settings["rounds"])
+            self.game = Game(self.clients,settings)
             await self.game.start_game()
             
 
@@ -301,8 +338,10 @@ async def websocket_endpoint(websocket: WebSocket,):
     try:
         player = await lobby.connect(websocket,random.choice(["red","blue","green","yellow","purple","orange","pink","brown","black","white"]))
         while True:
+            
 
             data = await websocket.receive_text()
+            print(data)
             await EventHandlder(data,player)
     except WebSocketDisconnect:
         await lobby.disconnect(websocket)
