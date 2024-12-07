@@ -16,7 +16,12 @@ function Game() {
     const [wordchoices, setWordChoices] = useState([]);
     const [currentWord, setCurrentWord] = useState("");
     const [activePlayer, setActivePlayer] = useState("");
+
     const [Wordtimer,setWordTimer] = useState(null);
+    const [turnTimer, setTurnTimer] = useState(null);
+
+    const [turnInWay, setTurnInWay] = useState(false);
+    
 
 
     useEffect(() => {
@@ -30,10 +35,11 @@ function Game() {
 
         const handleMessage =  (message) => {
             const data = JSON.parse(message.data);
+            console.log(data)
 
 
             if (data.type === "your_turn") {
-              
+                setTurnInWay(true)
                 setWordChoices(data.words)
                 setWordTimer(30)
             }
@@ -52,7 +58,12 @@ function Game() {
 
 
             if (data.type === "turn"){
+                setTurnInWay(true)
                 setActivePlayer(data.player)
+            }
+
+            if(data.type === "turn_timer_start"){
+                setTurnTimer(data.timer)
             }
 
             if (data.type === "word_selected"){
@@ -60,6 +71,18 @@ function Game() {
                 setCurrentWord(data.word)
                 setActivated(true)
                 setWordChoices([])
+            }
+
+            if(data.type === "current_word"){
+                setCurrentWord(data.word)
+            }
+
+            if(data.type === "turn_ended"){
+                console.log("turn ended")
+                setTurnInWay(false)
+                setActivated(false)
+                setCurrentWord("")
+                setActivePlayer("")
             }
 
 
@@ -70,6 +93,7 @@ function Game() {
 
 
         return () => {
+            console.log("closing")
             ws.removeEventListener('message', handleMessage);
             ws.close();
 
@@ -93,11 +117,27 @@ function Game() {
         } 
     }, [Wordtimer]);
 
+    useEffect(() => {
+        if (turnTimer > 0) {
+            const countdown = setInterval(() => {
+                setTurnTimer((prevTimer) => prevTimer - 1);
+            }, 1000);
+            return () => clearInterval(countdown);
+        } 
+
+    },[turnTimer])
+
+    const convert_sec = (sec) =>{
+        const minutes = Math.floor(sec / 60);
+        const seconds = sec % 60;
+        return `${minutes}:${seconds}`
+    }
+
     return (
 
         <div className={styles.game}>
             <div className={styles.header}>
-                <span className={styles.timer}>1:02</span>
+                <span className={styles.timer}>{convert_sec(turnTimer)}</span>
                 <span className={styles.word}>{currentWord}</span>
             </div>
             <div className={styles.body}>
@@ -107,7 +147,7 @@ function Game() {
                     })}
 
                 </div>
-                {(socketState && gameStarted) && <Canvas ws={socket} activted={activated} />}
+                {(socketState && gameStarted  && turnInWay) && <Canvas ws={socket} activted={activated} />}
                 {(!gameStarted && socketState && isHost) && <Lobby ws={socket} />}
                
 

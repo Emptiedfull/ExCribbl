@@ -37,13 +37,11 @@ function Canvas({ws,activted}) {
 
     useEffect(() => {
             const socket = ws.current;
-            console.log(socket)
 
             const handleSocket = (event) => {
                 let parsed = JSON.parse(event.data);
-                console.log(parsed)
                 if (parsed.type === "draw") {
-                    console.log(parsed.instructions)
+                  
                     InstructionAdder(parsed.instructions, canvasRef);
 
                 }
@@ -65,8 +63,7 @@ function Canvas({ws,activted}) {
         
 
         return () => {
-
-            socket.close();
+            socket.removeEventListener('message', handleSocket);
         }
 
     }, []);
@@ -138,7 +135,6 @@ function Canvas({ws,activted}) {
     };
 
     const handleGuess = () => {
-        console.log("guessing")
         const message = {
             type: "guess",
             guess: guess
