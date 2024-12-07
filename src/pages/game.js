@@ -3,6 +3,8 @@ import styles from '../styles/game.module.css';
 import Canvas from '../components/Canvas';
 import { useEffect, useRef, useState } from 'react';
 import Lobby from '../components/lobby';
+import Roundtras from '../components/roundtrans';
+
 
 import PlayerCard from '../components/playerCard';
 function Game() {
@@ -21,6 +23,9 @@ function Game() {
     const [turnTimer, setTurnTimer] = useState(null);
 
     const [turnInWay, setTurnInWay] = useState(false);
+
+    const [roundScore, setRoundScore] = useState([]);
+    
     
 
 
@@ -52,6 +57,7 @@ function Game() {
             }
 
             if (data.type === "participants") {
+                console.log(data.players)
               
                 setParticipants(data.players)
             }
@@ -78,11 +84,18 @@ function Game() {
             }
 
             if(data.type === "turn_ended"){
+                const roundScore = data.roundScore
+                console.log("round score")
+                console.log(roundScore)
+                setRoundScore(roundScore)
+                
                 console.log("turn ended")
                 setTurnInWay(false)
                 setActivated(false)
                 setCurrentWord("")
                 setActivePlayer("")
+                setWordTimer(null)
+                setTurnTimer(null)
             }
 
 
@@ -136,6 +149,8 @@ function Game() {
     return (
 
         <div className={styles.game}>
+            {(gameStarted && !turnInWay) &&   <Roundtras scoring={roundScore}></Roundtras>}
+          
             <div className={styles.header}>
                 <span className={styles.timer}>{convert_sec(turnTimer)}</span>
                 <span className={styles.word}>{currentWord}</span>
