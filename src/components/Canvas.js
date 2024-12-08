@@ -81,6 +81,10 @@ function Canvas({ws,activted}) {
 
         const handleMouseDown = (event) => {
             setIsDragging(true);
+            setControls((prevControls) => ({
+                ...prevControls,
+                shape: 'circle'
+            }))
             DrawCanvas(canvasRef, controls, getCursorPosition(event), ws.current);
 
         };
@@ -193,8 +197,15 @@ function Canvas({ws,activted}) {
                             ['#000000', '#FCB900', '#7BDCB5', '#00D084', '#8ED1FC', '#0693E3', '#ABB8C3', '#EB144C', '#F78DA7', '#9900EF','#ffffff']
                         }
                         onChangeComplete={(color) => setControls({ ...controls, color: [color.rgb.r, color.rgb.g, color.rgb.b] })}/>
+                       <div className={styles.clearButton}>
+                    <button onClick={() => {
+                        DrawCanvas(canvasRef, { ...controls, shape: 'clear' }, { x: 0, y: 0 }, ws.current);
+                    }}>Clear</button>
 
-                </div>}
+                </div>
+                </div>
+                }
+             
             </div>
             <div className={styles.chat}>
                 <div className={styles.chatMessages}>

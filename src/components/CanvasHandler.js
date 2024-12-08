@@ -22,12 +22,6 @@ export const InstructionAdder = (instruction,canvasRef,ws = NaN) => {
         instructionsList = []
         lastactivated = Date.now()
     }
-
-
-
-    
-    // UpdateCanvas(canvasRef)
-    // instructionsList = []
 };
 
 
@@ -59,9 +53,17 @@ export const UpdateCanvas = (canvasRef) => {
 const InstructionParser = (instructions, canvasContext) => {
     
     instructions.forEach(instruction => {
-        let color = instruction.color
+        let color = instruction.color || [0, 0, 0]  
         let thickness = instruction.thickness || 2
         switch (instruction.shape) {
+            case 'clear':
+                console.log(canvasContext.canvas.width,canvasContext.canvas.height)
+                console.log("clearing")
+                canvasContext.clearRect(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+                canvasContext.fillStyle = 'white';
+                canvasContext.fillRect(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+                canvasContext.closePath();
+                break;
             case 'rectangle':
                 break;
             case 'circle':
@@ -101,6 +103,7 @@ const InstructionParser = (instructions, canvasContext) => {
                 break
             default:
                 console.log("Invalid shape")
+                console.log(instruction.shape)
                 break
         }
     })
@@ -144,6 +147,12 @@ export const DrawCanvas = (canvasRef, controls, position,ws) => {
             radius: controls.brushSize,
             color: controls.color,
             fill: true
+        }
+    }
+
+    if (controls.shape === 'clear'){
+        instruction = {
+            shape: 'clear'
         }
     }
 

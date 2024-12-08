@@ -1,10 +1,14 @@
 import styles from '../styles/playercard.module.css';
 
-export default function PlayerCard({name,score,active}) {
+export default function PlayerCard({name,score,active,self}) {
     return (
-        <div className={(styles.playerCard) + " " +  (active ? styles.active: "none")} >
+        <div className={(styles.playerCard)} style={{
+            backgroundColor: self ? "#BCCCDC" : "white"
+        }}>
             <div className={styles.playerName}>
-                {name}
+                <span>{active ? "🖌️" : ""} </span>
+                <span>{name}</span>
+
             </div>
             <div className={styles.playerScore}>
                 {score}

@@ -26,6 +26,7 @@
     position: absolute; 
     left: 50%; 
     transform: translateX(-50%); 
+    letter-spacing: 0.2rem;
 }
 
 .body {

@@ -17,6 +17,8 @@ function Game() {
     const [activated, setActivated] = useState(false);
     const [wordchoices, setWordChoices] = useState([]);
     const [currentWord, setCurrentWord] = useState("");
+
+    const [yourPlayer, setYourPlayer] = useState("");
     const [activePlayer, setActivePlayer] = useState("");
 
     const [Wordtimer,setWordTimer] = useState(null);
@@ -41,6 +43,11 @@ function Game() {
         const handleMessage =  (message) => {
             const data = JSON.parse(message.data);
             console.log(data)
+
+            if (data.type === "your_name"){
+                setYourPlayer(data.name)
+
+            }
 
 
             if (data.type === "your_turn") {
@@ -158,7 +165,7 @@ function Game() {
             <div className={styles.body}>
                 <div className={styles.participants}>
                     {participants.map((participant, index) => {
-                        return <PlayerCard key={index} name={participant.name} score={participant.Score} active={activePlayer === participant.name} />
+                        return <PlayerCard key={index} name={participant.name} score={participant.Score} active={activePlayer === participant.name} self={yourPlayer === participant.name} />
                     })}
 
                 </div>
