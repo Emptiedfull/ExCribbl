@@ -1,0 +1,59 @@
+.lobby{
+    display: flex;
+    flex:1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.wrapper{
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    background-color: #9AA6B2;
+    border-radius: 5px;
+    padding: 1rem;
+    gap: 1rem;
+
+}
+
+.settings{
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 1rem;
+    background-color: #D9EAFD;
+    border-radius: 5px;
+    width: 100%;
+   
+}
+
+.settings label{
+    margin-left: 0.7rem;
+    font-size: 1rem;
+}
+
+.settings select{
+    border-radius: 5px;
+    margin: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.4rem;
+    font-size: 0.9rem;
+    padding-left: 1rem;
+    border-style: none;
+}
+
+.buttons{
+    align-self: flex-end    ;
+}
+
+.buttons button{
+    padding: 0.5rem;
+    border-radius: 5px;
+    background-color: #F8FAFC;
+    color: black;
+    font-weight: bold;
+    border-style: none;
+    cursor: pointer;
+}

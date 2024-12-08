@@ -175,7 +175,7 @@ function Canvas({ws,activted}) {
                         top: `${controls.cursorY}px`
                     }}
                 ></div>}
-                <div className={styles.controls}>
+               { activted &&<div className={styles.controls}>
                     <input
                         type="range"
                         min="5"
@@ -194,7 +194,7 @@ function Canvas({ws,activted}) {
                         }
                         onChangeComplete={(color) => setControls({ ...controls, color: [color.rgb.r, color.rgb.g, color.rgb.b] })}/>
 
-                </div>
+                </div>}
             </div>
             <div className={styles.chat}>
                 <div className={styles.chatMessages}>

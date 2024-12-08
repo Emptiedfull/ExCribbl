@@ -25,6 +25,7 @@ export default function Lobby({ws}){
     
     return (
         <div className={styles.lobby}>
+            <div className={styles.wrapper}>
             <div className={styles.settings}>
                 <label htmlFor="rounds">Number of Rounds:</label>
                 <select id="rounds" value={rounds} onChange={handleRoundsChange}>
@@ -53,6 +54,7 @@ export default function Lobby({ws}){
                 <button className={styles.start} onClick={(e)=>handleStart(e)}>
                     Start Game
                 </button>
+            </div>
             </div>
         </div>
     )
