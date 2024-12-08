@@ -1,16 +1,14 @@
-from fastapi import FastAPI,WebSocket,BackgroundTasks,WebSocketDisconnect
+from fastapi import FastAPI,WebSocket,WebSocketDisconnect
 from pydantic import BaseModel
 import asyncio
-from board import Board
+
 import json,time
-import tkinter as tk
+
 import random
+from distance import distance
 
 
 app = FastAPI()
-
-
-
 
 class Player(BaseModel):
     name: str
@@ -25,7 +23,8 @@ class Settings(BaseModel):
     round_time:int
   
 class Game:
-    def __init__(self,players:list[Player],settings:Settings):
+    def __init__(self,players:list[Player],settings:Settings,lobby):
+        self.lobby = lobby
         self.instructions = []
         self.players:list[Player] = players
         self.players_left:list[Player] = players
@@ -43,13 +42,31 @@ class Game:
        
         self.revealed = ""
         self.auto_select_task = None
+        self.auto_reveal_task = None    
 
+    async def HandleDisconnet(self,player:Player):
+        print("handling disconect:",player.name)
+
+        self.players.remove(player)
+       
+        
+        if len(self.players) == 0:
+            return "end"
+      
+        if player == self.current_player:
+            await self.turn_cleanup()
+        message = {
+            "type":"participants",
+            "players":[{"name":player.name,"Score":player.score} for player in self.players]
+        }
+        await self.broadcast(json.dumps(message))
+  
+        
     
     async def guess(self,guess:str,player:Player):
-        if player == self.current_player:
+        if player == self.current_player or player in self.passed:
             return
         if guess == self.currentword:
-            print("Correct guess")
             self.roundScore.append({"player":player,"score":100 - len(self.passed)*10 - len(self.revealed)*5})
             self.players[self.players.index(player)].score += 100 - len(self.passed)*10 - len(self.revealed)*5
             message = {
@@ -65,11 +82,21 @@ class Game:
                 await self.turn_cleanup()
         else:
             print("Incorrect guess")
+
             message = {
                 "type":"message",
                 "author":player.name,
                 "message":guess
             }
+
+            if distance(guess,self.currentword) <=2:
+                message2 = {
+                    "type":"message",
+                    "player":"server",
+                    "message":"Close guess"
+                }
+
+                await player.socket.send_text(json.dumps(message2)) 
             
             await self.broadcast(json.dumps(message))
 
@@ -92,9 +119,8 @@ class Game:
             await asyncio.sleep(10)
             if time.time() - time_start > self.settings["round_time"] or self.early_stop:
                 break
-            if len(self.revealed) != len(self.currentword)-2:
+            if len(self.revealed) != len(self.currentword)-2 and self.currentword:
                 letter = random.choice(self.currentword)
-                print("letter revealed:",letter)
             
                 if letter not in self.revealed:
                     self.revealed += letter
@@ -109,7 +135,7 @@ class Game:
                         "type":"current_word",
                         "word":word
                     }
-                
+
                     await self.ex_broadcast(json.dumps(message),self.current_player)
                     
        
@@ -122,13 +148,21 @@ class Game:
         
 
     async def turn_cleanup(self):
+        self.auto_reveal_task.cancel()
 
        
         self.roundScore = [{"player":player["player"].name,"score":player["score"],"current":False} for player in self.roundScore]
-        self.roundScore.append({"player":self.current_player.name,"score":0 + len(self.passed)*20 - len(self.revealed)*5,"current":True})
-        self.players[self.players.index(self.current_player)].score += 0 + len(self.passed)*20 - len(self.revealed)*5
+        try:
+            self.roundScore.append({"player":self.current_player.name,"score":0 + len(self.passed)*20 - len(self.revealed)*5,"current":True})
+            self.players[self.players.index(self.current_player)].score += 0 + len(self.passed)*20 - len(self.revealed)*5
+        except:
+            pass
 
-      
+        try:
+            self.auto_select_task.cancel()
+            self.early_stop = False
+        except:
+            pass
 
 
         message = {
@@ -136,9 +170,13 @@ class Game:
             "word":self.currentword,
             "roundScore":self.roundScore
         }
-        print(message)
+
         await self.broadcast(json.dumps(message))
 
+        message = {
+            "type":"current_word",
+            "word":""
+        }
         
 
         message2 = {
@@ -146,7 +184,7 @@ class Game:
             "players":[{"name":player.name,"Score":player.score} for player in self.players]
         }
         await self.broadcast(json.dumps(message2))
-        await asyncio.sleep(10)
+        await asyncio.sleep(5)
         self.roundScore = []
         self.revealed = ""
         self.autoSelect = False
@@ -167,8 +205,7 @@ class Game:
             if player != sender:
                 await player.socket.send_text(message)
 
-    async def stop_board_loop(self):
-        self.stop_event.set()
+
 
 
     async def start_game(self):
@@ -180,7 +217,6 @@ class Game:
                 "type":"game_start",
                 "players":[{"name":player.name,"Score":player.score} for player in self.players]
             }
-        print(message)
         await self.broadcast(json.dumps(message))
         
         await self.start_round()
@@ -190,12 +226,17 @@ class Game:
         self.players_left = self.players.copy()
         self.instructions = []
         self.current_round += 1
-        if self.current_round > self.settings["rounds"]:
+        if self.current_round > int(self.settings["rounds"]):
             message = {
                 "type":"game_end",
                 "players":[{"name":player.name,"Score":player.score} for player in self.players]
             }
+            print("Game end")
+           
             await self.broadcast(json.dumps(message))
+            self.lobby.game = None
+            self.lobby.clients = []
+            await self.lobby.disconnect_all()
             return
         message = {
             "type":"round",
@@ -237,7 +278,7 @@ class Game:
             "word":word
         }
         await self.current_player.socket.send_text(json.dumps(message))
-        asyncio.create_task(self.reveal_letters())
+        self.auto_reveal_task = asyncio.create_task(self.reveal_letters())
         
     async def start_turn(self):
         if len(self.players_left) == 0:
@@ -258,7 +299,6 @@ class Game:
             "words":self.wordchoices
 
         }
-        
        
 
         await self.current_player.socket.send_text(json.dumps(personalmessage))
@@ -269,6 +309,9 @@ class Game:
 
 
     async def draw(self,instructionsList,player):
+
+        if player != self.current_player:
+            return
 
         message = {
             "type":"draw",
@@ -291,6 +334,7 @@ class Lobby:
         self.game:Game = None
     
     async def connect(self,socket,name):
+        print(socket.client_state)
         await socket.accept()
         player = Player(name=name,score=0,socket=socket)
         self.clients.append(player)
@@ -311,10 +355,11 @@ class Lobby:
             "name":player.name
         }
 
+
         await player.socket.send_text(json.dumps(message2))
 
         if self.game:    
-            await player.socket.send_text(json.dumps({"type":"game_start","players":[{"name":player.name,"Score":player.score} for player in self.clients]}))
+            await player.socket.send_text(json.dumps({"type":"game_start","players":[{"name":player.name,"Score":player.score} for player in self.game.players]}))
             await player.socket.send_text(json.dumps({"type":"round","round":self.game.current_round}))
             await player.socket.send_text(json.dumps({"type":"turn","player":self.game.current_player.name}))
 
@@ -331,16 +376,16 @@ class Lobby:
 
         for player in self.clients:
             if player.socket == socket:
-                self.clients.remove(player)
-               
-
+                if self.game:
+                    if await self.game.HandleDisconnet(player) == "end":
+                        self.game = None
                 if self.host == player and len(self.clients) > 0:
                     self.host = self.clients[0]
                     await self.host.socket.send_text(json.dumps({"type":"host"}))
                 break
         if len(self.clients) == 0:
             self.host = None
-            self.game = None
+    
 
     async def broadcast(self,message):
         for client in self.clients:
@@ -348,9 +393,13 @@ class Lobby:
 
     async def start_game(self,settings:Settings,player):
         
-        if self.host == player and not self.game:
-            self.game = Game(self.clients,settings)
+        if self.host == player and not self.game and len(self.clients) > 1:
+            self.game = Game(self.clients,settings,self)
             await self.game.start_game()
+
+    async def disconnect_all(self):
+        for player in self.clients:
+            await player.socket.close()
             
 
 
@@ -362,15 +411,21 @@ lobby = Lobby()
 async def websocket_endpoint(websocket: WebSocket,):
 
     try:
+        if websocket.client_state == 3:
+            return
         player = await lobby.connect(websocket,random.choice(["red","blue","green","yellow","purple","orange","pink","brown","black","white"]))
         while True:
-            
-
+            if websocket.client_state == 3:
+                break
             data = await websocket.receive_text()
             await EventHandlder(data,player)
     except WebSocketDisconnect:
         await lobby.disconnect(websocket)
         print("Disconnected")
+    
+
+
+        
 
 async def EventHandlder(message:str,player:Player):
     try:
@@ -384,7 +439,7 @@ async def EventHandlder(message:str,player:Player):
         return
 
     if data["type"] == "start_game":
-        print("Starting game")
+    
         await lobby.start_game(data["settings"],player)
 
     if data["type"] == "draw":
@@ -394,11 +449,11 @@ async def EventHandlder(message:str,player:Player):
         await lobby.game.test()
 
     if data["type"] == "word_choice":
-        print("word choice")
+        
         await lobby.game.select_word(data["word"],player)
 
     if data["type"] == "guess":
-        print("Guessing")
+        
         await lobby.game.guess(data["guess"],player)
     
 
