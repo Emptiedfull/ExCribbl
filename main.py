@@ -42,6 +42,7 @@ class Game:
         self.wordlist = ["apple","banana","cherry","dog","cat","elephant","giraffe","horse","iguana","jaguar","kangaroo","lion","monkey","newt","octopus","penguin","quail","rabbit","snake","tiger","umbrella","vulture","whale","xray","yak","zebra"]
        
         self.revealed = ""
+        self.auto_select_task = None
 
     
     async def guess(self,guess:str,player:Player):
@@ -93,6 +94,7 @@ class Game:
                 break
             if len(self.revealed) != len(self.currentword)-2:
                 letter = random.choice(self.currentword)
+                print("letter revealed:",letter)
             
                 if letter not in self.revealed:
                     self.revealed += letter
@@ -121,9 +123,6 @@ class Game:
 
     async def turn_cleanup(self):
 
-      
-        
-        print(self.players)
        
         self.roundScore = [{"player":player["player"].name,"score":player["score"],"current":False} for player in self.roundScore]
         self.roundScore.append({"player":self.current_player.name,"score":0 + len(self.passed)*20 - len(self.revealed)*5,"current":True})
@@ -139,6 +138,8 @@ class Game:
         }
         print(message)
         await self.broadcast(json.dumps(message))
+
+        
 
         message2 = {
             "type":"participants",
@@ -215,6 +216,7 @@ class Game:
     async def auto_select_word(self):
         await asyncio.sleep(30)
         if self.autoSelect != False:
+            print("Auto selectng word")
             self.currentword = random.choice(self.wordchoices)
             message = {
                 "type":"word_selected",
@@ -228,6 +230,7 @@ class Game:
         if word not in self.wordchoices:
             return
         self.autoSelect = False
+        self.auto_select_task.cancel()
         self.currentword = word
         message = {
             "type":"word_selected",
@@ -262,7 +265,7 @@ class Game:
         await self.broadcast(messagejson)
 
         self.autoSelect = True
-        asyncio.create_task(self.auto_select_word())
+        self.auto_select_task = asyncio.create_task(self.auto_select_word())
 
 
     async def draw(self,instructionsList,player):
@@ -302,6 +305,13 @@ class Lobby:
         }
 
         await self.broadcast(json.dumps(message1))
+
+        message2 = {
+            "type":"your_name",
+            "name":player.name
+        }
+
+        await player.socket.send_text(json.dumps(message2))
 
         if self.game:    
             await player.socket.send_text(json.dumps({"type":"game_start","players":[{"name":player.name,"Score":player.score} for player in self.clients]}))
