@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import asyncio
 from fastapi.staticfiles import StaticFiles
 import json,time
+from multiprocessing import Manager
 
 import random
 from distance import distance
@@ -404,7 +405,7 @@ class Lobby:
 
 
 lobby = Lobby()
-    
+
 
 
 @app.websocket("/ws/name")
@@ -455,6 +456,11 @@ async def EventHandlder(message:str,player:Player):
         await lobby.game.guess(data["guess"],player)
     
 
+@app.get("/status")
+async def status():
+    if lobby.game:
+        return False
+    return True
 
 @app.get("/api/ws")
 async def get(request:Request):
