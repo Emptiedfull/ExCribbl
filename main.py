@@ -458,9 +458,21 @@ async def EventHandlder(message:str,player:Player):
 
 @app.get("/status")
 async def status():
+    statusMsg = {}
     if lobby.game:
-        return False
-    return True
+        statusMsg["game"] = "active"
+        playerList = []
+        for player in lobby.game.players:
+            playerList.append({"name":player.name,"score":player.score})
+        statusMsg["players"] = playerList
+    else:
+        statusMsg["game"] = "inactive"
+        if len(lobby.clients) > 0:
+            clientList = []
+            for client in lobby.clients:
+                clientList.append(client.name)
+            statusMsg["players"] = clientList
+    return json.dumps(statusMsg)
 
 @app.get("/api/ws")
 async def get(request:Request):

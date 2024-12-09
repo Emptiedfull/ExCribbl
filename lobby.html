@@ -129,7 +129,7 @@
             console.log(data);
             data.forEach((lob)=>{
                 const li = document.createElement('li');
-                li.innerHTML = `<span>${lob}</span><button class="enter_game" id="${lob}">Enter Game</button>`;
+                li.innerHTML = `<span>${lob[0]}   ${lob[1]}</span><button class="enter_game" id="${lob[0]}">Enter Game</button>`;
                 lobList.appendChild(li);
             });
 
