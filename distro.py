@@ -18,7 +18,8 @@ class server():
         self.link = "http://"+host+":"+ str(port)
         self.status = None
         self.process = None
-        self.clients = None
+        self.clients = []
+        self.forceOn = False
        
 
     def start(self):
@@ -30,16 +31,29 @@ class server():
                 stderr=logfile
             )
 
+    def restart(self):
+        self.end()
+        self.forceOn = True
+        self.start()
+
+    async def timeout(self):
+        await sleep(100000)
+        self.forceOn = False
+
 
     def end(self):
         self.process.terminate()
+        self.process.wait()
 
 
 class Distro():
     def __init__(self):
         self.maxServers = 3
         self.activeServers = []
+        self.inactiveServers = []
         self.servers = []
+
+       
 
     def create_server(self,host,port,name):
         if len(self.servers) >= self.maxServers:
@@ -47,6 +61,8 @@ class Distro():
         server1 = server(host,port,name)
         server1.start()
         self.servers.append(server1)
+        self.inactiveServers.append(server1)
+
         
     def create_servers(self,host,ports):
         for port in ports:
@@ -62,31 +78,79 @@ class Distro():
         return lobbies
     
     async def updateactiveServers(self):
+        
         for server in self.servers:
+           
             url = server.link + "/status"
             status = requests.get(url)
             status = json.loads(json.loads(status.text))
-            print(status)
     
-            if status["game"] == "inactive": 
-                if status.get("players"):
-                    print(status["players"])
-                    if len(status["players"]) == 0 and server in self.activeServers:
-                        print("Server is inactive")
-                        self.activeServers.remove(server)
-                    if len(status["players"]) > 0:
-                        print("Server is active")
-                        server.clients = status["players"]
+            # if status["game"] == "inactive": 
+            #     if status.get("players"):
+            #         print(status["players"])
+            #         if len(status["players"]) == 0 and server in self.activeServers:
+            #             print("Server is inactive")
+            #             self.activeServers.remove(server)
+            #             if server not in self.inactiveServers:
+            #                 self.inactiveServers.append(server)
+            #         if len(status["players"]) > 0:
+            #             print("Server is active")
+            #             server.clients = status["players"]
+            #             self.activeServers.append(server)
+            #             print(self.activeServers)
+            #     else:
+            #         if server in self.activeServers:
+            #             self.activeServers.remove(server)  
+            #         self.inactiveServers.append(server)
+                
+            # else:
+            #     self.activeServers.append(server)
+
+            if status["game"] == "activate":
+                if server not in self.activeServers:
+                    self.activeServers.append(server)
+                    if server in self.inactiveServers:
+                        self.inactiveServers.remove(server)
+            if status["game"] == "inactive":
+                print("Server is inactive")
+                if server.forceOn:
+                    print("Server is forced on")
+                    if server not in self.activeServers:
                         self.activeServers.append(server)
-                        print(self.activeServers)
+                        if players:
+                            server.clients = players
+                        if server in self.inactiveServers:
+                            self.inactiveServers.remove(server)
+                    continue      
+                players = status.get("players")
+                if players:
+                    if len(players) == 0:
+                       
+                            if server in self.activeServers:
+                                self.activeServers.remove(server)
+                            if server not in self.inactiveServers:
+                                self.inactiveServers.append(server)
+                    if len(players) > 0:
+                        if server not in self.activeServers:
+                            self.activeServers.append(server)
+                            if server in self.inactiveServers:
+                                self.inactiveServers.remove(server)
+                        server.clients = players
                 else:
                     if server in self.activeServers:
-                        self.activeServers.remove(server)  
-                
-            else:
-                self.activeServers.append(server)
-            
+                        self.activeServers.remove(server)
+                    if server not in self.inactiveServers:
+                        self.inactiveServers.append(server)
 
+
+    
+    def activate_server(self):
+        if self.inactiveServers:
+            server = self.inactiveServers.pop()
+            server.restart()
+            self.activeServers.append(server)
+        else:
+            print("No inactive servers")
 
     def get_lobby_link(self,name):
         for server in self.activeServers:
@@ -102,6 +166,7 @@ async def index():
 @app.get("/lobbies")
 async def lobbies():
     await distro.updateactiveServers()
+    print(distro.activeServers,distro.inactiveServers)
     return distro.get_lobbies()
 
 @app.get('/lobby/{code}/{name}')
@@ -111,8 +176,15 @@ async def lobby(code,name):
         return "Lobby not found"
     return FileResponse('./lobby.html',status_code=200)
 
+@app.get("/create")
+async def lobby():
+    distro.activate_server()
+    return "Creating lobby"
+
     
 distro = Distro()
-distro.create_servers("127.0.0.1",[8000,8001])
+distro.create_servers("127.0.0.1",[8000,8001,8002])
+
+
 
 atexit.register(distro.kill_servers)
