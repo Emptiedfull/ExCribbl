@@ -42,13 +42,22 @@
     font-size: 0.9rem;
     padding-left: 1rem;
     border-style: none;
+    cursor:pointer
+}
+
+.settings option{
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    cursor:pointer;
 }
 
 .buttons{
     align-self: flex-end    ;
 }
 
+
 .buttons button{
+
     padding: 0.5rem;
     border-radius: 5px;
     background-color: #F8FAFC;

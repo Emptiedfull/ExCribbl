@@ -29,17 +29,20 @@ function Game() {
     const [roundScore, setRoundScore] = useState([]);
     
     
+    
+    useEffect(()=>{
+        fetch('/api/ws').then((res) => {
+            return res.json();
+        }).then((data) => {
+            const ws = new WebSocket(data.link);
+            console.log(data)
+            ws.onopen = () => {
+                console.log("connected")
+                setSocketState(true)
+                socket.current = ws;
+            }
 
-
-    useEffect(() => {
-
-        const ws = new WebSocket('ws://localhost:8000/ws/name');
-
-        ws.onopen = () => {
-            setSocketState(true)
-            socket.current = ws;
-        }
-
+            
         const handleMessage =  (message) => {
             const data = JSON.parse(message.data);
             console.log(data)
@@ -110,16 +113,18 @@ function Game() {
 
         ws.addEventListener('message', handleMessage);
 
+          
+        
+        })
+        
 
+      
 
-        return () => {
-            console.log("closing")
-            ws.removeEventListener('message', handleMessage);
-            ws.close();
+        
+    },[])
 
-        }
+    
 
-    }, []);
 
     const handleWordChoice = (word) => {
         console.log(word)
