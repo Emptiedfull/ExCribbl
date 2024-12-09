@@ -1,7 +1,8 @@
-from fastapi import FastAPI,WebSocket,WebSocketDisconnect
+from fastapi import FastAPI,WebSocket,WebSocketDisconnect,Request
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import asyncio
-
+from fastapi.staticfiles import StaticFiles
 import json,time
 
 import random
@@ -9,6 +10,7 @@ from distance import distance
 
 
 app = FastAPI()
+app.mount('/static',StaticFiles(directory="build/static"),name="static")
 
 class Player(BaseModel):
     name: str
@@ -324,9 +326,6 @@ class Game:
             self.instructions.append(instructionsList)
         await self.ex_broadcast(json.dumps(message),player)
 
-
-
-
 class Lobby:
     def __init__(self):
         self.clients:list[Player] = []
@@ -334,12 +333,13 @@ class Lobby:
         self.game:Game = None
     
     async def connect(self,socket,name):
-        print(socket.client_state)
+        
         await socket.accept()
         player = Player(name=name,score=0,socket=socket)
         self.clients.append(player)
+        print("Connected:",len(self.clients),self.host)
         if len(self.clients) == 1 and not self.host:
-           
+            print("Host set")
             self.host = self.clients[0]
             await self.host.socket.send_text(json.dumps({"type":"host"}))
 
@@ -372,13 +372,13 @@ class Lobby:
         return player
 
     async def disconnect(self,socket):
-
-
         for player in self.clients:
             if player.socket == socket:
                 if self.game:
                     if await self.game.HandleDisconnet(player) == "end":
                         self.game = None
+                else:
+                    self.clients.remove(player)
                 if self.host == player and len(self.clients) > 0:
                     self.host = self.clients[0]
                     await self.host.socket.send_text(json.dumps({"type":"host"}))
@@ -411,12 +411,11 @@ lobby = Lobby()
 async def websocket_endpoint(websocket: WebSocket,):
 
     try:
-        if websocket.client_state == 3:
-            return
+        print(websocket.client_state)
+    
         player = await lobby.connect(websocket,random.choice(["red","blue","green","yellow","purple","orange","pink","brown","black","white"]))
         while True:
-            if websocket.client_state == 3:
-                break
+           
             data = await websocket.receive_text()
             await EventHandlder(data,player)
     except WebSocketDisconnect:
@@ -426,7 +425,6 @@ async def websocket_endpoint(websocket: WebSocket,):
 
 
         
-
 async def EventHandlder(message:str,player:Player):
     try:
         data = json.loads(message)
@@ -457,3 +455,15 @@ async def EventHandlder(message:str,player:Player):
         await lobby.game.guess(data["guess"],player)
     
 
+
+@app.get("/api/ws")
+async def get(request:Request):
+    print(request.url.hostname)
+    print(request.url.port)
+    url = f"ws://{request.url.hostname}:{request.url.port}/ws/name"
+    print(url)
+    return {"status":"ok","link":url}
+
+@app.get('/')
+def index():
+    return FileResponse("build/index.html")
