@@ -52,12 +52,22 @@
 }
 
 .buttons{
-    align-self: flex-end    ;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+
+}
+
+.error{
+    font-size: 1.1rem;
+    color: rgb(117, 16, 16);
 }
 
 
 .buttons button{
-
+    margin-left: auto;
     padding: 0.5rem;
     border-radius: 5px;
     background-color: #F8FAFC;

@@ -6,10 +6,15 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.7.8",
+    "assert": "^2.1.0",
+    "axios": "^1.7.9",
+    "buffer": "^6.0.3",
+    "path-browserify": "^1.0.1",
     "react": "^18.3.1",
     "react-color": "^2.19.3",
     "react-dom": "^18.3.1",
+    "react-icons": "^5.4.0",
+    "react-router-dom": "^7.0.2",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
@@ -37,5 +42,13 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:8000"
+  "browser": {
+    "buffer": false
+  },
+  "proxy": "http://localhost:8000",
+  "devDependencies": {
+    "webpack": "^5.97.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.1.0"
+  }
 }

@@ -4,10 +4,27 @@ import Canvas from '../components/Canvas';
 import { useEffect, useRef, useState } from 'react';
 import Lobby from '../components/lobby';
 import Roundtras from '../components/roundtrans';
-
+import { useLocation } from 'react-router-dom';
+import {FaCopy} from 'react-icons/fa';
 
 import PlayerCard from '../components/playerCard';
+
+function useQuery(){
+    return new URLSearchParams(useLocation().search)
+}
+
+const CopyLink = (link) =>{
+    navigator.clipboard.writeText(link).then(()=>{
+        return true
+    })
+}
 function Game() {
+
+    const query = useQuery();
+    const name = query.get('name');
+    const InviteLink = query.get('invite');
+    
+    console.log(name)
     const socket = useRef(null);
     const [socketState, setSocketState] = useState(false);
     const [isHost, setIsHost] = useState(false);
@@ -27,6 +44,8 @@ function Game() {
     const [turnInWay, setTurnInWay] = useState(false);
 
     const [roundScore, setRoundScore] = useState([]);
+
+    const [copyErr, setCopyErr] = useState(false);
     
     
     
@@ -34,7 +53,7 @@ function Game() {
         fetch('/api/ws').then((res) => {
             return res.json();
         }).then((data) => {
-            const ws = new WebSocket(data.link);
+            const ws = new WebSocket(data.link + `/${name}`);
             console.log(data)
             ws.onopen = () => {
                 console.log("connected")
@@ -113,11 +132,18 @@ function Game() {
 
         ws.addEventListener('message', handleMessage);
 
+
           
         
         })
-        
 
+        return () =>{
+            socket.current.close()
+        }
+
+
+        
+        
       
 
         
@@ -164,18 +190,44 @@ function Game() {
             {(gameStarted && !turnInWay) &&   <Roundtras scoring={roundScore}></Roundtras>}
           
             <div className={styles.header}>
-                <span className={styles.timer}>{convert_sec(turnTimer)}</span>
+                {turnTimer && <span className={styles.timer}>{convert_sec(turnTimer)}</span>}
                 <span className={styles.word}>{currentWord}</span>
             </div>
             <div className={styles.body}>
                 <div className={styles.participants}>
+                    <h1 className={styles.playersTitle}>Players</h1>
                     {participants.map((participant, index) => {
                         return <PlayerCard key={index} name={participant.name} score={participant.Score} active={activePlayer === participant.name} self={yourPlayer === participant.name} />
                     })}
+                    {copyErr && <div className={styles.copyErr}>
+                            <span>{copyErr}</span>
+                        </div>}
+                    <div className={styles.invite}>
+                        
+                        <span onClick={()=>
+                        {
+                            CopyLink(InviteLink)
+                            setCopyErr("Copied")
+
+                        }
+                    }>Invite more +</span>
+                        
+
+                    </div>
 
                 </div>
                 {(socketState && gameStarted  && turnInWay) && <Canvas ws={socket} activted={activated} />}
-                {(!gameStarted && socketState && isHost) && <Lobby ws={socket} />}
+                
+                {(!gameStarted && socketState && isHost) ? <Lobby ws={socket} />:
+
+               (!gameStarted && <div className={styles.wait}>
+                    <h1 styles={{
+                        textAlign: "center",
+                        fontSize: "2rem",
+                        color: "white"
+                    }}>Waiting for host to start game</h1>
+                    
+                </div>)}
                
 
             </div>

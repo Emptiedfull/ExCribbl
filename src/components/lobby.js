@@ -4,6 +4,7 @@ import styles from '../styles/lobby.module.css';
 export default function Lobby({ws}){
     const [rounds,setRounds] = useState(2)
     const [roundTime,setRoundTime] = useState(60)
+    const [Err,setErr] = useState(false) 
     
     const handleRoundsChange = (e) => {
         setRounds(e.target.value)
@@ -20,6 +21,11 @@ export default function Lobby({ws}){
 
         }
         ws.current.send(JSON.stringify(message))
+
+        setTimeout(()=>{
+            console.log("waiting for response")
+            setErr(true)
+        },1000)
 
     }
     
@@ -51,6 +57,7 @@ export default function Lobby({ws}){
                 </select>
             </div>
             <div className={styles.buttons}>
+                {Err && <p className={styles.error}>Error: Not enough players</p>}
                 <button className={styles.start} onClick={(e)=>handleStart(e)}>
                     Start Game
                 </button>
