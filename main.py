@@ -5,7 +5,6 @@ import asyncio
 from fastapi.staticfiles import StaticFiles
 import json,time
 from multiprocessing import Manager
-
 import random
 from distance import distance
 
@@ -140,10 +139,13 @@ class Game:
                     }
 
                     await self.ex_broadcast(json.dumps(message),self.current_player)
-                    
+        
+        print("early stop: ",self.early_stop)
+
        
 
         if  not self.early_stop:
+            print("Time up")
             await self.turn_cleanup()
 
        
@@ -162,6 +164,7 @@ class Game:
             pass
 
         try:
+            
             self.auto_select_task.cancel()
             self.early_stop = False
         except:
@@ -186,8 +189,10 @@ class Game:
             "type":"participants",
             "players":[{"name":player.name,"Score":player.score} for player in self.players]
         }
+
         await self.broadcast(json.dumps(message2))
-        await asyncio.sleep(5)
+        time.sleep(3)
+        print("Turn cleanup")
         self.roundScore = []
         self.revealed = ""
         self.autoSelect = False
@@ -267,6 +272,7 @@ class Game:
                 "word":self.currentword
             }
             await self.current_player.socket.send_text(json.dumps(message))
+            self.auto_reveal_task = asyncio.create_task(self.reveal_letters())
 
     async def select_word(self,word,player):
         if player != self.current_player:
@@ -275,6 +281,7 @@ class Game:
             return
         self.autoSelect = False
         self.auto_select_task.cancel()
+
         self.currentword = word
         message = {
             "type":"word_selected",
@@ -284,7 +291,9 @@ class Game:
         self.auto_reveal_task = asyncio.create_task(self.reveal_letters())
         
     async def start_turn(self):
+        print("Starting turn")
         if len(self.players_left) == 0:
+            print("Round end")  
             await self.start_round()
             return
         self.current_player = self.players_left.pop()
@@ -334,8 +343,14 @@ class Lobby:
         self.game:Game = None
     
     async def connect(self,socket,name):
-        
+      
         await socket.accept()
+
+        for player in self.clients:
+            if player.name == name:
+                name = name + str(random.randint(0,100))
+       
+           
         player = Player(name=name,score=0,socket=socket)
         self.clients.append(player)
         print("Connected:",len(self.clients),self.host)
@@ -408,13 +423,14 @@ lobby = Lobby()
 
 
 
-@app.websocket("/ws/name")
-async def websocket_endpoint(websocket: WebSocket,):
+@app.websocket("/ws/{name}")
+async def websocket_endpoint(websocket: WebSocket,name:str):
+
 
     try:
         print(websocket.client_state)
     
-        player = await lobby.connect(websocket,random.choice(["red","blue","green","yellow","purple","orange","pink","brown","black","white"]))
+        player = await lobby.connect(websocket,name)
         while True:
            
             data = await websocket.receive_text()
@@ -478,7 +494,7 @@ async def status():
 async def get(request:Request):
     print(request.url.hostname)
     print(request.url.port)
-    url = f"ws://{request.url.hostname}:{request.url.port}/ws/name"
+    url = f"ws://{request.url.hostname}:{request.url.port}/ws"
     print(url)
     return {"status":"ok","link":url}
 
