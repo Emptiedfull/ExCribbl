@@ -1,12 +1,16 @@
 .playerCard{
     display: flex;
     width: 80%;
-    background-color: white;
-    flex-direction: row;
-    justify-content: space-around;
-    font-size: 1.3rem;
+    background-color: #F4E0AF;
+    color: #3c4233;
+    flex-direction: column;
+   
+    align-items: center;
+    font-size: 1.4rem;
     border-radius: 20px ;
-    padding:0.5rem
+    padding:0.2rem
+    
+    
 }
 
 .active{

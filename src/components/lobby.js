@@ -4,6 +4,7 @@ import styles from '../styles/lobby.module.css';
 export default function Lobby({ws}){
     const [rounds,setRounds] = useState(2)
     const [roundTime,setRoundTime] = useState(60)
+    const [waitTime,setWaitTime] = useState(5)
     const [Err,setErr] = useState(false) 
     
     const handleRoundsChange = (e) => {
@@ -16,7 +17,8 @@ export default function Lobby({ws}){
             type: "start_game",
             settings:{
                 rounds: rounds,
-                round_time: roundTime
+                round_time: roundTime,
+                wait_time: waitTime
             }
 
         }
@@ -55,6 +57,13 @@ export default function Lobby({ws}){
                     <option value="150">150</option>
                     <option value="180">180</option>
                 </select>
+                <label htmlFor="Wait Time">Wait Time:</label>
+                <select id="Wait Time" value={roundTime} onChange={(e)=>setRoundTime(e.target.value)}>
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                </select>
+
             </div>
             <div className={styles.buttons}>
                 {Err && <p className={styles.error}>Error: Not enough players</p>}

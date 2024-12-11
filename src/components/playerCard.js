@@ -6,7 +6,7 @@ export default function PlayerCard({name,score,active,self}) {
             backgroundColor: self ? "#BCCCDC" : "white"
         }}>
             <div className={styles.playerName}>
-                <span>{active ? "🖌️" : ""} </span>
+                <span>{active ? "🖌️" : ""}</span>
                 <span>{name}</span>
 
             </div>

@@ -23,8 +23,6 @@ function Game() {
     const query = useQuery();
     const name = query.get('name');
     const InviteLink = query.get('invite');
-    
-    console.log(name)
     const socket = useRef(null);
     const [socketState, setSocketState] = useState(false);
     const [isHost, setIsHost] = useState(false);
@@ -187,11 +185,12 @@ function Game() {
     return (
 
         <div className={styles.game}>
-            {(gameStarted && !turnInWay) &&   <Roundtras scoring={roundScore}></Roundtras>}
+            {(gameStarted && !turnInWay) && <Roundtras scoring={roundScore}></Roundtras>}
           
             <div className={styles.header}>
                 {turnTimer && <span className={styles.timer}>{convert_sec(turnTimer)}</span>}
-                <span className={styles.word}>{currentWord}</span>
+                <span className={styles.word}>{currentWord ? currentWord : !gameStarted ? "Waiting for game start" : "Player is selecting word"}</span>
+                
             </div>
             <div className={styles.body}>
                 <div className={styles.participants}>
@@ -202,7 +201,7 @@ function Game() {
                     {copyErr && <div className={styles.copyErr}>
                             <span>{copyErr}</span>
                         </div>}
-                    <div className={styles.invite}>
+                    <div className={styles.invite} style={{cursor:'pointer'}}>
                         
                         <span onClick={()=>
                         {
@@ -233,8 +232,8 @@ function Game() {
             </div>
             {wordchoices.length > 0 && 
                 <div className={styles.overlay}>  
-                        <h2 className={styles.overlayHeading}> Your Turn</h2>   
-                        <h3 className={styles.overlaySubheading}>Choose a word</h3>
+                        <h2 className={styles.overlayHeading} style={{color:"#9AA6B2"}}> Your Turn</h2>   
+                        <h3 className={styles.overlaySubheading} style={{color:"#BCCCDC"}}>Choose a word</h3>
                         <h3 className={styles.TimeRemaining}>Time Remaining: {Wordtimer}</h3>
                         <div className={styles.choices}>
                         {

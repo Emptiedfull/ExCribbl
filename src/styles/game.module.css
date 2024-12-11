@@ -36,7 +36,8 @@
 }
 
 .playersTitle{
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+    
    
    
     border-radius: 5px;
@@ -78,14 +79,18 @@
 }
 
 .wordchoice{
+    margin-top: 1rem;
     border-radius: 4px;
     padding:0.5rem;
     background-color: #4c72af;
+    cursor: pointer;
+
 }
 
 .choices{
     display: flex;
-    gap: 1rem;
+    width: 60%;
+    gap:1rem;
     justify-content: space-around;
 }
 

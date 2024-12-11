@@ -3,19 +3,19 @@ import styles from '../styles/canvas.module.css';
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { UpdateCanvas, createCanvas, DrawCanvas, InstructionAdder } from './CanvasHandler';
-import {CirclePicker,SketchPicker }from 'react-color'
+import { CirclePicker, SketchPicker } from 'react-color'
 
 import Message from './message';
 
 
 
-function Canvas({ws,activted}) {
+function Canvas({ ws, activted }) {
     const canvasRef = useRef(null);
 
-    const [messages,setmessages] = useState([{author:"server",message:"welcome to the game"},{author:"server",message:"you have 60 seconds to draw"}]);
-    const [guess,setguess] = useState("");
+    const [messages, setmessages] = useState([{ author: "server", message: "welcome to the game" }, { author: "server", message: "you have 60 seconds to draw" }]);
+    const [guess, setguess] = useState("");
 
-   
+
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [isHovering, setIsHovering] = useState(false);
@@ -36,31 +36,31 @@ function Canvas({ws,activted}) {
     }, [])
 
     useEffect(() => {
-            const socket = ws.current;
+        const socket = ws.current;
 
-            const handleSocket = (event) => {
-                let parsed = JSON.parse(event.data);
-                if (parsed.type === "draw") {
-                  
-                    InstructionAdder(parsed.instructions, canvasRef);
+        const handleSocket = (event) => {
+            let parsed = JSON.parse(event.data);
+            if (parsed.type === "draw") {
 
-                }
+                InstructionAdder(parsed.instructions, canvasRef);
 
-                if (parsed.type === "message") {
-                    setmessages(messages => [...messages, { author: parsed.author, message: parsed.message }]);
-                }
-
-                if (parsed.type === "correct_guess"){
-                    setmessages(messages => [...messages, { author: "server", message: `${parsed.player} has guessed the word` }]);
-
-                }
             }
-            socket.addEventListener('message', handleSocket);
+
+            if (parsed.type === "message") {
+                setmessages(messages => [...messages, { author: parsed.author, message: parsed.message }]);
+            }
+
+            if (parsed.type === "correct_guess") {
+                setmessages(messages => [...messages, { author: "server", message: `${parsed.player} has guessed the word` }]);
+
+            }
+        }
+        socket.addEventListener('message', handleSocket);
 
 
-            
-            
-        
+
+
+
 
         return () => {
             socket.removeEventListener('message', handleSocket);
@@ -126,14 +126,12 @@ function Canvas({ws,activted}) {
             canvas.removeEventListener('mousemove', handleMouseMove);
             canvas.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging,activted])
+    }, [isDragging, activted])
 
     const handleSliderChange = (event) => {
         setControls({
             ...controls,
             brushSize: event.target.value
-
-
         });
 
     };
@@ -159,12 +157,13 @@ function Canvas({ws,activted}) {
                         ref={canvasRef}
                         className={styles.boardInner}
                         style={{
-                            cursor: {activted} ? 'default' : 'none'
+                            cursor: { activted } ? 'default' : 'none'
                         }}
 
                     ></canvas>
                 </div>
-                {isHovering && activted && <div
+                {isHovering && activted && 
+                <div
                     className={styles.customCursor}
                     style={{
                         width: `${controls.brushSize * 2}px`,
@@ -179,33 +178,43 @@ function Canvas({ws,activted}) {
                         top: `${controls.cursorY}px`
                     }}
                 ></div>}
-               { activted &&<div className={styles.controls}>
-                    <input
-                        type="range"
-                        min="5"
-                        max="20"
-                        value={controls.brushSize}
-                        onChange={(e) => handleSliderChange(e)}
-                        style={{
-                            '--thumb-size': `${controls.brushSize * 2}px`
-                        }}
-                    >
-                    </input>
-                    <CirclePicker
-                        className={styles.colorPicker}
-                        colors={
-                            ['#000000', '#FCB900', '#7BDCB5', '#00D084', '#8ED1FC', '#0693E3', '#ABB8C3', '#EB144C', '#F78DA7', '#9900EF','#ffffff']
-                        }
-                        onChangeComplete={(color) => setControls({ ...controls, color: [color.rgb.r, color.rgb.g, color.rgb.b] })}/>
-                       <div className={styles.clearButton}>
-                    <button onClick={() => {
-                        DrawCanvas(canvasRef, { ...controls, shape: 'clear' }, { x: 0, y: 0 }, ws.current);
-                    }}>Clear</button>
+                {activted && 
+                <div className={styles.controls}>
+                    <div className={styles.coloumn}>
 
-                </div>
+                        <input
+                            type="range"
+                            min="5"
+                            max="20"
+                            value={controls.brushSize}
+                            onChange={(e) => handleSliderChange(e)}
+                            style={{
+                                '--thumb-size': `${controls.brushSize * 2}px`
+                            }}
+                        >
+                        </input>
+                        <CirclePicker
+                            className={styles.colorPicker}
+                            colors={
+                                ['#000000', '#FCB900', '#7BDCB5', '#00D084', '#8ED1FC', '#0693E3', '#ABB8C3', '#EB144C', '#F78DA7', '#9900EF', '#ffffff']
+                            }
+                            onChangeComplete={(color) => setControls({ ...controls, color: [color.rgb.r, color.rgb.g, color.rgb.b] })} />
+                        
+
+
+
+                    </div>
+                    <div>
+                        <div className={styles.clearButton}>
+                             <button onClick={() => {
+                            DrawCanvas(canvasRef, { ...controls, shape: 'clear' }, { x: 0, y: 0 }, ws.current);
+                            }}>Clear</button>
+                        </div>
+                       
+                    </div>
                 </div>
                 }
-             
+
             </div>
             <div className={styles.chat}>
                 <div className={styles.chatMessages}>
@@ -218,8 +227,8 @@ function Canvas({ws,activted}) {
 
                 </div>
                 <div classN ame={styles.chatInput}>
-                    <input type="text" placeholder="guess the word" className={styles.chatTextInput} value={guess} onChange={(e)=>{setguess(e.target.value)}}/>
-                    <button className={styles.chatSendButton}  onClick={()=>handleGuess()}>Send</button>
+                    <input type="text" placeholder="guess the word" className={styles.chatTextInput} value={guess} onChange={(e) => { setguess(e.target.value) }} />
+                    <button className={styles.chatSendButton} onClick={() => handleGuess()}>Send</button>
 
                 </div>
 
