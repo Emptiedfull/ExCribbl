@@ -7,6 +7,7 @@ import json,time
 from multiprocessing import Manager
 import random
 from distance import distance
+from wordselect import gen
 
 
 app = FastAPI()
@@ -41,7 +42,6 @@ class Game:
         self.wordchoices = []
         self.currentword = ""
         self.wordlist = ["apple","banana","cherry","dog","cat","elephant","giraffe","horse","iguana","jaguar","kangaroo","lion","monkey","newt","octopus","penguin","quail","rabbit","snake","tiger","umbrella","vulture","whale","xray","yak","zebra"]
-       
         self.revealed = ""
         self.auto_select_task = None
         self.auto_reveal_task = None    
@@ -119,7 +119,7 @@ class Game:
         time_start = time.time()
         while not self.early_stop:
             await asyncio.sleep(10)
-            if time.time() - time_start > self.settings["round_time"] or self.early_stop:
+            if time.time() - time_start > int(self.settings["round_time"]) or self.early_stop:
                 break
             if len(self.revealed) != len(self.currentword)-2 and self.currentword:
                 letter = random.choice(self.currentword)
@@ -153,11 +153,17 @@ class Game:
         
 
     async def turn_cleanup(self):
-        self.auto_reveal_task.cancel()
+        if self.auto_reveal_task:
+            self.auto_reveal_task.cancel()
+            try:
+                await self.auto_reveal_task
+            except asyncio.CancelledError:
+                pass
 
-       
-        self.roundScore = [{"player":player["player"].name,"score":player["score"],"current":False} for player in self.roundScore]
+        
+        
         try:
+            self.roundScore = [{"player":player["player"].name,"score":player["score"],"current":False} for player in self.roundScore]
             self.roundScore.append({"player":self.current_player.name,"score":0 + len(self.passed)*20 - len(self.revealed)*5,"current":True})
             self.players[self.players.index(self.current_player)].score += 0 + len(self.passed)*20 - len(self.revealed)*5
         except:
@@ -191,8 +197,9 @@ class Game:
         }
 
         await self.broadcast(json.dumps(message2))
-        time.sleep(3)
-        print("Turn cleanup")
+        print("starting sleep")
+        await asyncio.sleep(self.settings["wait_time"])
+        print("ending sleep ")
         self.roundScore = []
         self.revealed = ""
         self.autoSelect = False
@@ -256,11 +263,6 @@ class Game:
         await self.start_turn()
 
 
-    def gen_word_choices(self):
-        words = []
-        for i in range(3):
-            words.append(random.choice(self.wordlist))
-        return words
     
     async def auto_select_word(self):
         await asyncio.sleep(30)
@@ -305,7 +307,7 @@ class Game:
         }
         messagejson = json.dumps(message)
 
-        self.wordchoices = self.gen_word_choices()
+        self.wordchoices = gen()
         personalmessage = {
             "type":"your_turn",
             "words":self.wordchoices
