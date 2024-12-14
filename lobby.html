@@ -1,30 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+
     <title>Lobby</title>
 </head>
+
 <body>
     <div class="title">
-        <span style="color: #608BC1;">Ex</span>Cribble 
+        <span id="x" style="color: #608BC1;">Ex</span>Cribble
+    </div>
+    <div class="errors">
+
     </div>
     <div class="player">
         <label for="player_name">Player Name:</label>
         <input type="text" placeholder="Player Name" id="player_name">
     </div>
     <div class="lobbies">
-        
-        <h1>Available Lobbies   <i class="fas fa-sync-alt refresh"></i> </h1>
+
+        <h1>Available Lobbies <i class="fas fa-sync-alt refresh"></i> </h1>
         <ul class="lobList">
         </ul>
         <button class="create_lobby">Create Lobby</button>
-        
+
     </div>
-    
+
 </body>
 <style>
+    .errors {
+        color: red;
+        font-size: 1.2rem;
+    }
+
     body {
         height: 100vh;
         background-color: #F1F0E8;
@@ -35,21 +47,22 @@
         justify-content: center;
     }
 
-    *{
+    * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
     }
 
-    .refresh{
+    .refresh {
         cursor: pointer;
     }
 
-    .refresh:hover{
+    .refresh:hover {
         color: #608BC1;
     }
-    .player{
-        
+
+    .player {
+        margin-top: 0.5rem;
         border-radius: 10px;
         font-size: 1.5rem;
         font-weight: normal;
@@ -57,13 +70,13 @@
         padding: 1rem;
         display: flex;
         justify-content: space-between;
-        gap:1rem;
+        gap: 1rem;
         align-items: center;
         margin-bottom: 1rem;
-        
+
     }
 
-    .create_lobby{
+    .create_lobby {
         width: 30%;
         align-self: flex-end;
         margin-top: 0.7rem;
@@ -75,34 +88,35 @@
         border-radius: 5px;
     }
 
-    .create_lobby:hover{
+    .create_lobby:hover {
         background-color: #AABBD0;
     }
 
-    .player input{
+    .player input {
         padding: 0.5rem;
         border-radius: 5px;
         border: none;
         font-size: 1rem;
     }
+
     .title {
         font-size: 5rem;
         color: #697565;
         font-weight: bold;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
 
-    .lobbies{
+    .lobbies {
         width: 60%;
         border-radius: 10px;
         background-color: #9AA6B2;
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
-        
+
     }
 
-    .lobbies h1{
+    .lobbies h1 {
 
         width: 100%;
         text-align: center;
@@ -112,7 +126,7 @@
 
     }
 
-    .lobList{
+    .lobList {
         list-style-type: none;
         background-color: #D9EAFD;
         border-radius: 10px;
@@ -123,17 +137,17 @@
 
     }
 
-    .lobList li{
+    .lobList li {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 0.4rem;
-        
+
         background-color: white;
         border-radius: 10px;
     }
 
-    .enter_game{
+    .enter_game {
         background-color: #BCCCDC;
         border: none;
         cursor: pointer;
@@ -141,53 +155,109 @@
         padding: 0.4rem;
         border-radius: 5px;
     }
-    
 </style>
 <script>
-    document.addEventListener('DOMContentLoaded',(event)=>{
+
+    const { animate, stagger ,easing} = Motion
+
+    document.addEventListener('DOMContentLoaded', (event) => {
         const lobList = document.querySelector('.lobList');
         const refresh = document.querySelector('.refresh');
         const create_lobby = document.querySelector('.create_lobby');
         console.log('DOM fully loaded and parsed');
 
+        const title = document.querySelector('.title');
+        // animate(
+        //     title,
+        //     {scale:[1,1.5,1],rotate:[0,360]},
+        //     {
+        //         delay: 0.5,
+        //         duration: 1.5,
+        //     }
+        // )
+        const ex = document.querySelector('#x');
+        animate(
+            ex,
+            { filter: ['contrast(10%)', 'contrast(800%)'], opacity: [0.5, 1] }, 
+            {
+                delay: 0.5,
+                duration: 3,
+                ease: [.84,.14,.54,.64]
+            }
+        )
+
         updateLobbies(lobList);
-        create_lobby.addEventListener('click',()=>{
+        create_lobby.addEventListener('click', () => {
+            lobList.innerHTML = '';
             create()
+            updateLobbies(lobList);
+
         });
-        refresh.addEventListener('click',()=>{
+        refresh.addEventListener('click', () => {
             lobList.innerHTML = '';
             updateLobbies(lobList);
         });
 
-        
+
     })
 
-    const updateLobbies = (lobList)=>{
-        fetch('/lobbies').then((response)=>{
+
+    const enter_lobby = (e) => {
+        name = document.querySelector('#player_name').value;
+        if (!name) {
+            player = document.querySelector('.player')
+            error = document.querySelector(".errors")
+            error.innerHTML = "Please enter a name";
+            animate(player,{scale:[1,1.1,1]},{duration:0.5})
+            return
+        }
+        id = e.target.id
+        url = `/lobby/${id}/${name}`
+        window.open(url, "_blank")
+
+
+
+    }
+    const updateLobbies = (lobList) => {
+
+        fetch('/lobbies').then((response) => {
             return response.json();
-        }).then((data)=>{
+        }).then((data) => {
             console.log(data);
-            if (data.length === 0){
+            if (data.length === 0) {
                 const li = document.createElement('li');
                 li.innerHTML = `<span>No Lobbies Available</span>`;
                 lobList.appendChild(li);
             }
-            data.forEach((lob)=>{
+            data.forEach((lob) => {
                 const li = document.createElement('li');
-                li.innerHTML = `<span>${lob[0]}   ${lob[1]}</span><button class="enter_game" id="${lob[0]}">Enter Game</button>`;
+                li.style.opacity = 0;
+                li.innerHTML = `<span>${lob[0]}     (${lob[1]}/8)</span><button class="enter_game" id="${lob[0]}" onClick="enter_lobby(event)">Enter Game</button>`;
                 lobList.appendChild(li);
-            });
+                
 
-            
-        }).catch((error)=>{
+            });
+            animate(
+                    "li",
+                    { opacity: 1,x:[-100,0] },
+                    {
+                        delay: stagger(0.2),
+                        duration: 0.5,
+                        
+                    }
+                )
+
+
+
+        }).catch((error) => {
             console.log(error);
         });
+
     }
 
-    const create = ()=>{
+    const create = () => {
         fetch('./create')
     }
 </script>
+
 </html>
-
-

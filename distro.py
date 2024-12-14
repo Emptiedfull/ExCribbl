@@ -2,9 +2,11 @@ import subprocess
 from fastapi import FastAPI
 import atexit
 from time import sleep
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse,RedirectResponse
 import requests
-import json 
+import json,asyncio
+import string,random
+
 
 app = FastAPI()
 
@@ -55,18 +57,20 @@ class Distro():
 
        
 
-    def create_server(self,host,port,name):
+    async def create_server(self,host,port):
         if len(self.servers) >= self.maxServers:
             return
+        name = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         server1 = server(host,port,name)
         server1.start()
+        await self.wait_for_startup(server1)
         self.servers.append(server1)
         self.inactiveServers.append(server1)
 
         
     def create_servers(self,host,ports):
         for port in ports:
-            self.create_server(host,port,"server"+str(port))
+            asyncio.create_task(self.create_server(host,port))
 
     def kill_servers(self):
         for server in self.activeServers:
@@ -76,13 +80,32 @@ class Distro():
         print(self.activeServers)
         lobbies = [[server.name,len(server.clients)] for server in self.activeServers]
         return lobbies
+
+    async def wait_for_startup(self,server):
+        while True:
+            
+            await asyncio.sleep(1)
+            try:
+                url = server.link + "/status"
+                status = requests.get(url)
+                if status:
+                    return True
+            except:
+                
+                continue
+
+        
     
     async def updateactiveServers(self):
         
         for server in self.servers:
            
             url = server.link + "/status"
-            status = requests.get(url)
+            try:
+                status = requests.get(url)
+            except:
+                continue
+            print(status)
             status = json.loads(json.loads(status.text))
     
             # if status["game"] == "inactive": 
@@ -113,16 +136,17 @@ class Distro():
                         self.inactiveServers.remove(server)
             if status["game"] == "inactive":
                 print("Server is inactive")
+                players = status.get("players")
                 if server.forceOn:
-                    print("Server is forced on")
+                    if players:
+                            server.clients = players
                     if server not in self.activeServers:
                         self.activeServers.append(server)
-                        if players:
-                            server.clients = players
+                        
                         if server in self.inactiveServers:
                             self.inactiveServers.remove(server)
                     continue      
-                players = status.get("players")
+                
                 if players:
                     if len(players) == 0:
                        
@@ -174,7 +198,14 @@ async def lobby(code,name):
     link = distro.get_lobby_link(code)
     if link == None:
         return "Lobby not found"
-    return FileResponse('./lobby.html',status_code=200)
+    
+    redirectUrl = link+"?name="+name
+
+    return RedirectResponse(redirectUrl)
+
+
+
+
 
 @app.get("/create")
 async def lobby():
