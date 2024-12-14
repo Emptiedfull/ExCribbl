@@ -3,3 +3,5 @@ __pycache__/
 jsonCheatSheet
 venv/
 client/
+build/
+*.log
