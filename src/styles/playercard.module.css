@@ -1,14 +1,17 @@
 .playerCard{
     display: flex;
     width: 80%;
+    height: 10%;
     background-color: #F4E0AF;
     color: #3c4233;
     flex-direction: column;
-   
+    justify-content: center;
     align-items: center;
-    font-size: 1.4rem;
+    font-size: 0.9rem;
+    text-align: justify;
+    letter-spacing: 1px;
     border-radius: 20px ;
-    padding:0.2rem
+    
     
     
 }

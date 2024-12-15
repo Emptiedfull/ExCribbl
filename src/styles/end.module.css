@@ -1,0 +1,37 @@
+.main{
+    display:flex;
+    flex-direction:column;
+    justify-content: center; 
+    align-items: center;
+    height:100vh;
+    background-color: #f0ebcb;
+}
+
+.heading{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.heading h1{
+    font-size: 5rem;
+}
+
+.heading p{
+    font-size: 2rem;
+}
+
+.scores{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap:0.5rem
+}
+
+.scoreRow{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap:7rem
+}
