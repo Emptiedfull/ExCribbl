@@ -1,0 +1,12 @@
+[Unit]
+Description="Scribbl Server"
+After=network.target
+
+[Service]
+User=emptiedfull
+Group=emptiedfull
+WorkingDirectory= "/home/emptiedfull/excribbl"
+ExecStart = "uvicorn distro:app --port 43787"
+
+[Install]
+WantedBy=default.target
