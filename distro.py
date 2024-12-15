@@ -190,7 +190,6 @@ async def index():
 @app.get("/lobbies")
 async def lobbies():
     await distro.updateactiveServers()
-    print(distro.activeServers,distro.inactiveServers)
     return distro.get_lobbies()
 
 @app.get('/lobby/{code}/{name}')
