@@ -216,7 +216,8 @@ async def lobby():
 
     
 distro = Distro()
-distro.create_servers("0.0.0.0",get_port())
+# distro.create_servers("0.0.0.0",get_port())
+distro.create_servers("0.0.0.0",[8000,8001,8002])
 
 
 

@@ -104,9 +104,10 @@ class Game:
 
     async def reveal_letters(self):
         print( "Revealing letters")
+        exempt = [" ","-","'"]
         message = {
             "type":"current_word",
-            "word":"_"*len(self.currentword)
+            "word":"".join(["_" if char not in exempt else char for char in self.currentword])
         }
 
         message2 = {
@@ -126,7 +127,7 @@ class Game:
             
                 if letter not in self.revealed:
                     self.revealed += letter
-                    word = list("_"*len(self.currentword))
+                    word = list("".join(["_" if char not in exempt else char for char in self.currentword]))
                     for revealed in self.revealed:
                     
                         index = self.currentword.index(revealed)
