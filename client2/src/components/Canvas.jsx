@@ -14,7 +14,7 @@ function Canvas({ ws, activted }) {
 
     const [messages, setmessages] = useState([{ author: "server", message: "welcome to the game" }, { author: "server", message: "you have 60 seconds to draw" }]);
     const [guess, setguess] = useState("");
-
+    
 
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -28,7 +28,11 @@ function Canvas({ ws, activted }) {
 
 
 
-
+    const handleKeyDown = (e)=>{
+        if (e.key ==="Enter"){
+            handleGuess();
+        }
+    }
 
 
     useEffect(() => {
@@ -141,6 +145,7 @@ function Canvas({ ws, activted }) {
             type: "guess",
             guess: guess
         }
+        if (guess === "") return;
         ws.current.send(JSON.stringify(message))
         setguess("");
     }
@@ -227,7 +232,7 @@ function Canvas({ ws, activted }) {
 
                 </div>
                 <div classN ame={styles.chatInput}>
-                    <input type="text" placeholder="guess the word" className={styles.chatTextInput} value={guess} onChange={(e) => { setguess(e.target.value) }} />
+                    <input type="text" placeholder="guess the word" onKeyDown={handleKeyDown} className={styles.chatTextInput} value={guess} onChange={(e) => { setguess(e.target.value)  }} />
                     <button className={styles.chatSendButton} onClick={() => handleGuess()}>Send</button>
 
                 </div>

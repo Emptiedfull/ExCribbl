@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import Lobby from '../components/lobby';
 import Roundtras from '../components/roundtrans';
 import { useLocation } from 'react-router-dom';
-import {FaCopy} from 'react-icons/fa';
+import {motion,animate} from 'motion/react';
+import End from "../components/end"
+
 
 import PlayerCard from '../components/playerCard';
 
@@ -19,14 +21,13 @@ const CopyLink = (link) =>{
     })
 }
 function Game() {
-
+    const [gameEnd,setGameEnd] = useState(false)
     const query = useQuery();
     const name = query.get('name');
     const InviteLink = query.get('invite');
     const socket = useRef(null);
     const [socketState, setSocketState] = useState(false);
     const [isHost, setIsHost] = useState(false);
-
     const [gameStarted, setGameStarted] = useState(false);
     const [participants, setParticipants] = useState([]);
     const [activated, setActivated] = useState(false);
@@ -89,6 +90,11 @@ function Game() {
                 setParticipants(data.players)
             }
 
+            if (data.type === "game_end"){
+                setGameEnd(true)
+                setParticipants(data.players)
+            }
+
 
             if (data.type === "turn"){
                 setTurnInWay(true)
@@ -107,6 +113,7 @@ function Game() {
             }
 
             if(data.type === "current_word"){
+            
                 setCurrentWord(data.word)
             }
 
@@ -182,7 +189,7 @@ function Game() {
         return `${minutes}:${seconds}`
     }
 
-    return (
+    return !gameEnd ? (
 
         <div className={styles.game}>
             {(gameStarted && !turnInWay) && <Roundtras scoring={roundScore}></Roundtras>}
@@ -194,25 +201,28 @@ function Game() {
             </div>
             <div className={styles.body}>
                 <div className={styles.participants}>
-                    <h1 className={styles.playersTitle}>Players</h1>
+                    <h1 className={styles.playersTitle}>Plunderers</h1>
                     {participants.map((participant, index) => {
                         return <PlayerCard key={index} name={participant.name} score={participant.Score} active={activePlayer === participant.name} self={yourPlayer === participant.name} />
                     })}
                     {copyErr && <div className={styles.copyErr}>
                             <span>{copyErr}</span>
                         </div>}
-                    <div className={styles.invite} style={{cursor:'pointer'}}>
+                    <motion.div  whileHover = {{scale:1.2}} whileTap={{scale:0.9}} transition={{ type: "spring", stiffness: 400, damping: 10 }} className={styles.invite} style={{cursor:'pointer'}}>
                         
                         <span onClick={()=>
                         {
                             CopyLink(InviteLink)
                             setCopyErr("Copied")
+                            setTimeout(()=>{
+                                setCopyErr()
+                            },3000)
 
                         }
                     }>Invite more +</span>
                         
 
-                    </div>
+                    </motion.div>
 
                 </div>
                 {(socketState && gameStarted  && turnInWay) && <Canvas ws={socket} activted={activated} />}
@@ -250,7 +260,7 @@ function Game() {
                 </div>}
 
         </div>
-    );
+    ): (<End players={participants} invite={InviteLink}/>)
 }
 
 export default Game;
