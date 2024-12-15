@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse,RedirectResponse
 import requests
 import json,asyncio
 import string,random
+from port import get_port
 
 
 app = FastAPI()
@@ -179,7 +180,7 @@ class Distro():
     def get_lobby_link(self,name):
         for server in self.activeServers:
             if server.name == name:
-                return server.link
+                return server.port
         return None
 
 
@@ -194,11 +195,13 @@ async def lobbies():
 
 @app.get('/lobby/{code}/{name}')
 async def lobby(code,name):
-    link = distro.get_lobby_link(code)
-    if link == None:
+    port = distro.get_lobby_link(code)
+    if port == None:
         return "Lobby not found"
     
+    link = "http://37.27.51.34:" + str(port)
     redirectUrl = link+"?name="+name
+    print(redirectUrl)
 
     return RedirectResponse(redirectUrl)
 
@@ -213,7 +216,7 @@ async def lobby():
 
     
 distro = Distro()
-distro.create_servers("127.0.0.1",[8000,8001,8002])
+distro.create_servers("0.0.0.0",get_port())
 
 
 
