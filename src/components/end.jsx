@@ -5,15 +5,15 @@ const End = ({players,invite})=>{
 
     
      
-    const samplePlayers = [
-        { name: "Alice", Score: 150 },
-        { name: "Bob", Score: 200 },
-        { name: "Charlie", Score: 100 },
-        { name: "David", Score: 250 }
-    ];
+    // const samplePlayers = [
+    //     { name: "Alice", Score: 150 },
+    //     { name: "Bob", Score: 200 },
+    //     { name: "Charlie", Score: 100 },
+    //     { name: "David", Score: 250 }
+    // ];
 
     const ScoreBlock = () =>{
-        const sorted = samplePlayers.sort((a, b) => b.Score - a.Score);
+        const sorted = players.sort((a, b) => b.Score - a.Score);
     
         const res = sorted.map((entry,i)=>{
             let name = entry.name
@@ -27,7 +27,7 @@ const End = ({players,invite})=>{
             }
 
             return (
-                <motion.div animate={{opacity:1}} initial={{opacity:0}} whileHover={{scale:1.2}} transition={{opacity:{delay:0.2},scale:{type:"spring"}}} className={styles.scoreRow} style={{fontSize:1.4 + (sorted.length - pos + 1)*0.3+"rem",color:color_mapping[i+1]}}>
+                <motion.div animate={{scale:[1,1.2,1],transition:{delay:0.2*pos}}}  className={styles.scoreRow} style={{fontSize:1.4 + (sorted.length - pos + 1)*0.3+"rem",color:color_mapping[i+1]}}>
                     <span>
                         {pos}. {name} {pos === 1 ? "👑":""}
                     </span>

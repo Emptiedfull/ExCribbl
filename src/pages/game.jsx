@@ -21,7 +21,7 @@ const CopyLink = (link) =>{
     })
 }
 function Game() {
-    const [gameEnd,setGameEnd] = useState(true)
+    const [gameEnd,setGameEnd] = useState(false)
     const query = useQuery();
     const name = query.get('name');
     const InviteLink = query.get('invite');
