@@ -33,17 +33,13 @@ function Game() {
     const [activated, setActivated] = useState(false);
     const [wordchoices, setWordChoices] = useState([]);
     const [currentWord, setCurrentWord] = useState("");
-
+    const [roundmsg,setroundmsg] = useState("")
     const [yourPlayer, setYourPlayer] = useState("");
     const [activePlayer, setActivePlayer] = useState("");
-
     const [Wordtimer,setWordTimer] = useState(null);
     const [turnTimer, setTurnTimer] = useState(null);
-
     const [turnInWay, setTurnInWay] = useState(false);
-
     const [roundScore, setRoundScore] = useState([]);
-
     const [copyErr, setCopyErr] = useState(false);
     
     
@@ -67,6 +63,11 @@ function Game() {
 
             if (data.type === "your_name"){
                 setYourPlayer(data.name)
+
+            }
+
+            if (data.type === "round"){
+                setroundmsg(data.rounddisp)
 
             }
 
@@ -201,6 +202,7 @@ function Game() {
             </div>
             <div className={styles.body}>
                 <div className={styles.participants}>
+                    <h1 className={styles.rounds}>Round {roundmsg}</h1>
                     <h1 className={styles.playersTitle}>Plunderers</h1>
                     {participants.map((participant, index) => {
                         return <PlayerCard key={index} name={participant.name} score={participant.Score} active={activePlayer === participant.name} self={yourPlayer === participant.name} />
