@@ -3,7 +3,7 @@ import styles from '../styles/canvas.module.css';
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { UpdateCanvas, createCanvas, DrawCanvas, InstructionAdder } from './CanvasHandler';
-import { CirclePicker, SketchPicker } from 'react-color'
+import { CirclePicker, SliderPicker } from 'react-color'
 
 import Message from './message';
 
@@ -21,7 +21,7 @@ function Canvas({ ws, activted }) {
     const [isHovering, setIsHovering] = useState(false);
 
     const [controls, setControls] = useState({
-        brushSize: 5,
+        brushSize: 10,
         color: [60, 255, 100],
         shape: 'circle'
     });
@@ -157,6 +157,7 @@ function Canvas({ ws, activted }) {
     return (
         <div className={styles.Canvas}>
             <div className={styles.column}>
+                {activted && <h1 className={styles.info}>If lines are dotted, pls select a bigger brush Size</h1>}
                 <div className={styles.board}>
                     <canvas
                         ref={canvasRef}
@@ -209,12 +210,13 @@ function Canvas({ ws, activted }) {
 
 
                     </div>
-                    <div>
+                    <div className={styles.column}>
                         <div className={styles.clearButton}>
                              <button onClick={() => {
                             DrawCanvas(canvasRef, { ...controls, shape: 'clear' }, { x: 0, y: 0 }, ws.current);
                             }}>Clear</button>
                         </div>
+                        
                        
                     </div>
                 </div>

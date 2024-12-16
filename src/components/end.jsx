@@ -3,14 +3,14 @@ import {motion} from "motion/react"
 
 const End = ({players,invite})=>{
 
-    
+    console.log(invite)
      
-    // const samplePlayers = [
-    //     { name: "Alice", Score: 150 },
-    //     { name: "Bob", Score: 200 },
-    //     { name: "Charlie", Score: 100 },
-    //     { name: "David", Score: 250 }
-    // ];
+    const samplePlayers = [
+        { name: "Alice", Score: 150 },
+        { name: "Bob", Score: 200 },
+        { name: "Charlie", Score: 100 },
+        { name: "David", Score: 250 }
+    ];
 
     const ScoreBlock = () =>{
         const sorted = players.sort((a, b) => b.Score - a.Score);
@@ -27,7 +27,7 @@ const End = ({players,invite})=>{
             }
 
             return (
-                <motion.div animate={{scale:[1,1.2,1],transition:{delay:0.2*pos}}}  className={styles.scoreRow} style={{fontSize:1.4 + (sorted.length - pos + 1)*0.3+"rem",color:color_mapping[i+1]}}>
+                <motion.div  initial={{y:10}} animate={{scale:[1,1.2,1],y:0,transition:{delay:0.2*pos}}}  className={styles.scoreRow} style={{fontSize:1.4 + (sorted.length - pos + 1)*0.3+"rem",color:color_mapping[i+1]}}>
                     <span>
                         {pos}. {name} {pos === 1 ? "👑":""}
                     </span>
@@ -58,10 +58,10 @@ const End = ({players,invite})=>{
                 {ScoreBlock()}
             </div>
 
-            <div className={styles.invite}>
-                
+            <motion.div className={styles.invite} whileHover={{scale:1.2}} transition={{type:"spring"}} onClick={()=>window.location.href = invite}>
+                Back to home screen
 
-            </div>
+            </motion.div>
         </motion.div>
     )
 }
