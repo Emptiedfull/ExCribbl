@@ -8,11 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
     <title>ExCribbl Lobby</title>
     <meta name="description" content="Join a game of ExCribble">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Slackey&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 
 <body>
     <div class="title">
-        <span id="x" style="color: #608BC1;">Ex</span>Cribble
+        <h1><span id="x" style="color: #608BC1;">Ex</span>Cribble</h1>
+        <p>The ultimate pirate drawing game</p>
     </div>
     <div class="errors">
 
@@ -40,7 +45,7 @@
     body {
         height: 100vh;
         background-color: #F1F0E8;
-        font-family: Arial, sans-serif;
+        font-family: 'Poppins', sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -102,8 +107,23 @@
     .title {
         font-size: 5rem;
         color: #697565;
+        
+        letter-spacing: 0.1rem;
         font-weight: bold;
         margin-bottom: 0.5rem;
+    }
+
+    .title h1{
+        font-size: 6rem;
+        font-family: "Slackey", sans-serif;
+        letter-spacing: 0.2rem;
+       
+
+    }
+
+    .title p{
+        font-size: 1rem;
+        text-align: center;
     }
 
     .lobbies {
@@ -178,11 +198,10 @@
         const ex = document.querySelector('#x');
         animate(
             ex,
-            { filter: ['contrast(10%)', 'contrast(800%)'], opacity: [0.5, 1] }, 
+            { filter: ['contrast(10%)', 'contrast(150%)'], opacity: [0.5, 1] }, 
             {
                 delay: 0.5,
-                duration: 3,
-                ease: [.66,.39,.53,-1.33]
+                duration: 1,
             }
         )
 

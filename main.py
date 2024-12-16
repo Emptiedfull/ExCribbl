@@ -256,7 +256,8 @@ class Game:
             return
         message = {
             "type":"round",
-            "round":self.current_round
+            "round":self.current_round,
+            "rounddisp":f'{self.current_round}/{self.settings["rounds"]}'
         }
         messagejson = json.dumps(message)
       
@@ -432,7 +433,8 @@ async def websocket_endpoint(websocket: WebSocket,name:str):
 
     try:
         print(websocket.client_state)
-    
+        if len(name) > 7:
+            name = name[:8] + "..."
         player = await lobby.connect(websocket,name)
         while True:
            

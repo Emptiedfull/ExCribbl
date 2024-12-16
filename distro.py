@@ -3,13 +3,38 @@ from fastapi import FastAPI
 import atexit
 from time import sleep
 from fastapi.responses import FileResponse,RedirectResponse
-import requests
+import requests,uvicorn
 import json,asyncio
 import string,random
 from port import get_port
+from contextlib import asynccontextmanager
+import os,shutil
 
 
-app = FastAPI()
+def clear_logs():
+    for filename in os.listdir('logs'):
+        file = os.path.join("logs",filename)
+        try:
+            if os.path.isfile(file) or os.path.islink(file):
+                os.unlink(file)
+            elif os.path.isdir(file):
+                shutil.rmtree(file) 
+        except Exception:
+            print(Exception)
+
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    clear_logs()
+    distro.create_servers("127.0.0.1",[8000,8001,8002])
+    
+
+    yield
+
+app = FastAPI(lifespan=lifespan)
+# app_port = get_port(1)[0]
+app_port = 8010
+
+
 
 
 class server():
@@ -27,7 +52,7 @@ class server():
 
     def start(self):
         print("Starting server on port: "+self.port)
-        with open(f'{self.port}server.log' , 'w') as logfile:
+        with open(f'logs/{self.port}server.log' , 'w') as logfile:
             self.process = subprocess.Popen(
                 ["uvicorn", "main:app", "--host", self.host, "--port", self.port],
                 stdout=logfile,
@@ -59,6 +84,7 @@ class Distro():
        
 
     async def create_server(self,host,port):
+
         if len(self.servers) >= self.maxServers:
             return
         name = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -84,7 +110,6 @@ class Distro():
 
     async def wait_for_startup(self,server):
         while True:
-            
             await asyncio.sleep(1)
             try:
                 url = server.link + "/status"
@@ -182,7 +207,7 @@ class Distro():
             if server.name == name:
                 return server.port
         return None
-
+distro = Distro()
 
 @app.get("/")
 async def index():
@@ -199,26 +224,24 @@ async def lobby(code,name):
     if port == None:
         return "Lobby not found"
     
-    link = "http://37.27.51.34:" + str(port)
-    redirectUrl = link+"?name="+name
+    # link = "http://37.27.51.34:" + str(port)
+    # redirectUrl = link+"?name="+name +"&invite="+"http://37.27.51.34:"+app_port
+    link = "http://127.0.0.1:" + str(port)
+    redirectUrl = link+"?name="+name +"&invite="+"http://127.0.0.1:"+str(app_port)
     print(redirectUrl)
 
     return RedirectResponse(redirectUrl)
 
 
 
-
-
 @app.get("/create")
 async def lobby():
+    print("Servers",distro.servers)
     distro.activate_server()
     return "Creating lobby"
 
-    
-distro = Distro()
-# distro.create_servers("0.0.0.0",get_port())
-distro.create_servers("0.0.0.0",[8000,8001,8002])
 
 
-
-atexit.register(distro.kill_servers)
+if __name__ == "__main__":
+    uvicorn.run(app,host="0.0.0.0",port=app_port)
+    atexit.register(distro.kill_servers)
